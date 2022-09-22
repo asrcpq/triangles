@@ -4,7 +4,6 @@ use image::ImageBuffer;
 
 use triangles::model::Model;
 use triangles::model::SolidFace;
-use triangles::M4;
 use triangles::renderer::Renderer;
 
 fn main() {
@@ -14,19 +13,21 @@ fn main() {
 			1024, 1024, |_, _| image::Rgba::from([0, 0, 0, 255]),
 		)],
 		&el,
-		[640, 480],
 	);
 	el.run(move |event, _, ctrl| match event {
 		Event::WindowEvent {event: e, ..} => match e {
 			WindowEvent::CloseRequested => {
 				*ctrl = ControlFlow::Exit;
 			},
+			WindowEvent::Resized(_) => {
+				rdr.damage();
+			},
 			WindowEvent::KeyboardInput {..} => {
 				let vs = vec![
-					[0.1, 0.1, 0.0, 1.0],
-					[0.1, 0.2, 0.0, 1.0],
-					[0.2, 0.1, 0.0, 1.0],
-					[0.2, 0.2, 0.0, 1.0],
+					[000., 000., 0.0, 1.0],
+					[000., 200., 0.0, 1.0],
+					[200., 000., 0.0, 1.0],
+					[200., 200., 0.0, 1.0],
 				];
 				let f1 = SolidFace {
 					vid: [0, 1, 2],
@@ -42,7 +43,7 @@ fn main() {
 					tex_faces: Vec::new(),
 					solid_faces: vec![f1, f2],
 				};
-				rdr.render(&model, M4::identity());
+				rdr.render2(&model);
 			},
 			_ => {},
 		},

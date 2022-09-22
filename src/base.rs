@@ -22,7 +22,6 @@ fn winit_size(size: [u32; 2]) -> Size {
 impl Base {
 	pub fn new<E>(
 		el: &EventLoopWindowTarget<E>,
-		window_size: [u32; 2],
 	) -> Self {
 		let required_extensions = vulkano_win::required_extensions();
 		let instance = Instance::new(InstanceCreateInfo {
@@ -31,7 +30,7 @@ impl Base {
 		})
 		.unwrap();
 		let surface = WindowBuilder::new()
-			.with_inner_size(winit_size(window_size))
+			.with_inner_size(winit_size([800, 600]))
 			//.with_resizable(false)
 			.build_vk_surface(el, instance.clone())
 			.unwrap();

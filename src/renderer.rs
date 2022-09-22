@@ -28,14 +28,13 @@ impl Renderer {
 	pub fn new<E>(
 		images: Vec<TexImage>,
 		el: &EventLoopWindowTarget<E>,
-		window_size: [u32; 2],
 	) -> Self {
-		let base = Base::new(el, window_size);
+		let base = Base::new(el);
 		let prev = Some(sync::now(base.device.clone()).boxed());
 		let rmod = Rmod::new(base.clone(), images);
 		let viewport = Viewport {
 			origin: [0.0, 0.0],
-			dimensions: [window_size[0] as f32, window_size[1] as f32],
+			dimensions: [800.0, 600.0],
 			depth_range: 0.0..1.0,
 		};
 
@@ -49,6 +48,14 @@ impl Renderer {
 	}
 
 	pub fn damage(&mut self) { self.dirty = true; }
+
+	pub fn render2(&mut self, model: &Model) {
+		let [w, h]: [u32; 2] =
+			self.base.surface.window().inner_size().into();
+		let [w, h] = [w as f32, h as f32];
+		let camera = M4::new_orthographic(0., w, 0., h, 1., -1.);
+		self.render(model, camera);
+	}
 
 	pub fn render(&mut self, model: &Model, camera: M4) {
 		self.prev.as_mut().unwrap().cleanup_finished();
