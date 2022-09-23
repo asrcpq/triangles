@@ -46,6 +46,14 @@ impl Renderer {
 		}
 	}
 
+	pub fn get_size(&self) -> [u32; 2] {
+		self.base.surface.window().inner_size().into()
+	}
+
+	pub fn redraw(&mut self) {
+		self.base.surface.window().request_redraw();
+	}
+
 	pub fn upload_tex(&mut self, image: Teximg, id: usize) {
 		self.rmod.texman.upload(image, id, self.base.queue.clone());
 	}

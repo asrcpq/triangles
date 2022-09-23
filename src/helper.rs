@@ -128,7 +128,7 @@ pub fn get_swapchain_and_images(
 	.unwrap()
 }
 
-pub fn get_render_pass<W>(
+pub fn get_render_pass_clear<W>(
 	device: VkwDevice,
 	swapchain: VkwSwapchain<W>,
 ) -> VkwRenderPass {
@@ -137,6 +137,28 @@ pub fn get_render_pass<W>(
 		attachments: {
 			color: {
 				load: Clear,
+				store: Store,
+				format: swapchain.image_format(),
+				samples: 1,
+			}
+		},
+		pass: {
+			color: [color],
+			depth_stencil: {}
+		}
+	)
+	.unwrap()
+}
+
+pub fn get_render_pass_load<W>(
+	device: VkwDevice,
+	swapchain: VkwSwapchain<W>,
+) -> VkwRenderPass {
+	vulkano::single_pass_renderpass!(
+		device,
+		attachments: {
+			color: {
+				load: Load,
 				store: Store,
 				format: swapchain.image_format(),
 				samples: 1,

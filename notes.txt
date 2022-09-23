@@ -1,5 +1,5 @@
 # change:
-- dynamic texture loading/unloading
+- clear/load renderpass
 
 # todo:
 - depth

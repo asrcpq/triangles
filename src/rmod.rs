@@ -30,9 +30,9 @@ impl Rmod {
 		base: Base,
 	) -> Self {
 		let renderpass_solid =
-			get_render_pass(base.device.clone(), base.swapchain.clone());
+			get_render_pass_clear(base.device.clone(), base.swapchain.clone());
 		let renderpass_tex =
-			get_render_pass(base.device.clone(), base.swapchain.clone());
+			get_render_pass_load(base.device.clone(), base.swapchain.clone());
 		let pipeline_solid = get_pipeline_solid(renderpass_solid.clone(), base.device.clone());
 		let pipeline_tex = get_pipeline_tex(renderpass_tex.clone(), base.device.clone());
 
