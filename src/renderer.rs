@@ -13,7 +13,7 @@ use crate::rmod::Rmod;
 use crate::model::Model;
 use crate::M4;
 use crate::camera::Camera;
-use crate::TexImage;
+use crate::teximg::Teximg;
 
 pub struct Renderer {
 	base: Base,
@@ -26,12 +26,11 @@ pub struct Renderer {
 
 impl Renderer {
 	pub fn new<E>(
-		images: Vec<TexImage>,
 		el: &EventLoopWindowTarget<E>,
 	) -> Self {
 		let base = Base::new(el);
 		let prev = Some(sync::now(base.device.clone()).boxed());
-		let rmod = Rmod::new(base.clone(), images);
+		let rmod = Rmod::new(base.clone());
 		let viewport = Viewport {
 			origin: [0.0, 0.0],
 			dimensions: [800.0, 600.0],
@@ -45,6 +44,14 @@ impl Renderer {
 			viewport,
 			dirty: false,
 		}
+	}
+
+	pub fn upload_tex(&mut self, image: Teximg, id: usize) {
+		self.rmod.texman.upload(image, id, self.base.queue.clone());
+	}
+
+	pub fn remove_tex(&mut self, outer: usize) {
+		self.rmod.texman.remove(outer);
 	}
 
 	pub fn damage(&mut self) { self.dirty = true; }

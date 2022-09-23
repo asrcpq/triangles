@@ -4,9 +4,10 @@ mod base;
 mod rmod;
 mod vertex;
 mod camera;
+mod texman;
+pub mod teximg;
 pub mod model;
 pub mod renderer;
 
-pub type TexImage = image::ImageBuffer<image::Rgba<u8>, Vec<u8>>;
 pub type V2 = nalgebra::Vector2<f32>;
 pub type M4 = nalgebra::Matrix4<f32>;

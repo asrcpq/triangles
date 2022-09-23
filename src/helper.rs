@@ -2,28 +2,25 @@ use std::sync::Arc;
 use vulkano::command_buffer::{
 	AutoCommandBufferBuilder, PrimaryAutoCommandBuffer,
 };
-use vulkano::descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet};
+use vulkano::descriptor_set::PersistentDescriptorSet;
+use vulkano::descriptor_set::layout::DescriptorSetLayout;
 use vulkano::device::physical::{PhysicalDevice, PhysicalDeviceType};
 use vulkano::device::{
 	Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
 	QueueCreateInfo,
 };
-use vulkano::format::Format;
-use vulkano::image::view::{ImageView, ImageViewCreateInfo, ImageViewType};
-use vulkano::image::{
-	ImageDimensions, ImageUsage, ImmutableImage, MipmapsCount, SwapchainImage,
-};
+use vulkano::image::view::ImageView;
+use vulkano::image::{ImageUsage, ImmutableImage, SwapchainImage};
 use vulkano::instance::Instance;
 use vulkano::pipeline::graphics::input_assembly::{
 	InputAssemblyState, PrimitiveTopology,
 };
 use vulkano::pipeline::graphics::vertex_input::BuffersDefinition;
 use vulkano::pipeline::graphics::viewport::ViewportState;
-use vulkano::pipeline::{GraphicsPipeline, Pipeline};
+use vulkano::pipeline::GraphicsPipeline;
 use vulkano::render_pass::{
 	Framebuffer, FramebufferCreateInfo, RenderPass, Subpass,
 };
-use vulkano::sampler::{Sampler, SamplerCreateInfo};
 use vulkano::swapchain::{Surface, Swapchain, SwapchainCreateInfo};
 use vulkano::sync::GpuFuture;
 use winit::window::Window;
@@ -35,6 +32,7 @@ pub type VkwCommandBuilder = AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>;
 pub type VkwDevice = Arc<Device>;
 pub type VkwFramebuffer = Arc<Framebuffer>;
 pub type VkwFuture = Box<dyn GpuFuture>;
+pub type VkwImageView = Arc<ImageView<ImmutableImage>>;
 pub type VkwImages = Vec<Arc<SwapchainImage<Window>>>;
 pub type VkwInstance = Arc<Instance>;
 pub type VkwPipeline = Arc<GraphicsPipeline>;
@@ -43,6 +41,7 @@ pub type VkwRenderPass = Arc<RenderPass>;
 pub type VkwSurface<W> = Arc<Surface<W>>;
 pub type VkwSwapchain<W> = Arc<Swapchain<W>>;
 pub type VkwTextureSet = Arc<PersistentDescriptorSet>;
+pub type VkwTexLayout = Arc<DescriptorSetLayout>;
 
 pub fn get_device_and_queue<W>(
 	instance: &VkwInstance,
@@ -189,61 +188,6 @@ pub fn get_pipeline_tex (
 		.build(device.clone())
 		.unwrap();
 	pipeline
-}
-
-type ImageData = image::ImageBuffer<image::Rgba<u8>, Vec<u8>>;
-
-pub fn get_textures(
-	textures: Vec<ImageData>,
-	device: VkwDevice,
-	queue: VkwQueue,
-	pipeline: VkwPipeline,
-) -> Arc<PersistentDescriptorSet> {
-	let tex_len = textures.len() as u32;
-	let arrays: Vec<Vec<u8>> = textures
-		.into_iter()
-		.map(|t| t.as_raw().clone())
-		.collect();
-	let (texture, tex_future) = {
-		let dimensions = ImageDimensions::Dim2d {
-			width: 1024,
-			height: 1024,
-			array_layers: tex_len,
-		};
-		#[allow(clippy::needless_collect)]
-		let arrays: Vec<u8> = arrays.into_iter().flat_map(|x| x.into_iter()).collect();
-		let format = Format::R8G8B8A8_SRGB;
-		let (image, future) = ImmutableImage::from_iter(
-			arrays.into_iter(),
-			dimensions,
-			MipmapsCount::One,
-			format,
-			queue,
-		)
-		.unwrap();
-		let image_view = ImageView::new(
-			image.clone(),
-			ImageViewCreateInfo {
-				view_type: ImageViewType::Dim2dArray,
-				..ImageViewCreateInfo::from_image(&image)
-			},
-		)
-		.unwrap();
-		(image_view, future)
-	};
-
-	let sampler =
-		Sampler::new(device, SamplerCreateInfo::simple_repeat_linear())
-			.unwrap();
-
-	let layout = pipeline.layout().set_layouts().get(1).unwrap();
-	let texture_set = PersistentDescriptorSet::new(
-		layout.clone(),
-		[WriteDescriptorSet::image_view_sampler(0, texture, sampler)],
-	)
-	.unwrap();
-	tex_future.flush().unwrap();
-	texture_set
 }
 
 pub fn window_size_dependent_setup(

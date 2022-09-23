@@ -1,1 +1,6 @@
-change: add render2 for 2d pixel drawing
+# change:
+- dynamic texture loading/unloading
+
+# todo:
+- depth
+- multiwindow

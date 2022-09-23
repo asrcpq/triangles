@@ -10,7 +10,7 @@ use crate::vertex::{VertexTex, VertexSolid};
 use crate::helper::*;
 use crate::model::Model;
 use crate::camera::Camera;
-use crate::TexImage;
+use crate::texman::Texman;
 
 type VertexSolidBuffer = Arc<CpuAccessibleBuffer<[VertexSolid]>>;
 type VertexTexBuffer = Arc<CpuAccessibleBuffer<[VertexTex]>>;
@@ -21,14 +21,13 @@ pub struct Rmod {
 	pipeline_solid: VkwPipeline,
 	pipeline_tex: VkwPipeline,
 	renderpass_solid: VkwRenderPass,
-	texture_set: VkwTextureSet,
+	pub texman: Texman,
 }
 
 
 impl Rmod {
 	pub fn new(
 		base: Base,
-		textures: Vec<TexImage>,
 	) -> Self {
 		let renderpass_solid =
 			get_render_pass(base.device.clone(), base.swapchain.clone());
@@ -39,19 +38,13 @@ impl Rmod {
 
 		let framebuffers =
 			window_size_dependent_setup(renderpass_solid.clone(), &base.images);
-		let texture_set = get_textures(
-			textures,
-			base.device.clone(),
-			base.queue.clone(),
-			pipeline_tex.clone(),
-		);
 		Self {
 			base,
 			framebuffers,
 			pipeline_solid,
 			pipeline_tex,
 			renderpass_solid,
-			texture_set,
+			texman: Default::default(),
 		}
 	}
 
@@ -105,7 +98,7 @@ impl Rmod {
 	}
 
 	pub fn build_command(
-		&self,
+		&mut self,
 		builder: &mut VkwCommandBuilder,
 		image_num: usize,
 		model: &Model,
@@ -154,30 +147,43 @@ impl Rmod {
 
 		let vertex_buffer = self.generate_tex_vertex_buffer(&model);
 		if let Some(vertex_buffer) = vertex_buffer {
-			let clear_values = vec![None];
-			builder
-				.begin_render_pass(
-					RenderPassBeginInfo {
-						clear_values,
-						..RenderPassBeginInfo::framebuffer(self.framebuffers[image_num].clone())
-					},
-					SubpassContents::Inline,
-				)
-				.unwrap()
-				.set_viewport(0, [viewport]);
-			builder.bind_descriptor_sets(
-				PipelineBindPoint::Graphics,
-				self.pipeline_tex.layout().clone(),
-				0,
-				vec![set, self.texture_set.clone()],
+			let texset = self.texman.compile_set(
+				self.base.device.clone(),
+				self.pipeline_tex
+					.layout()
+					.set_layouts()
+					.get(1)
+					.unwrap()
+					.clone(),
 			);
-			builder.bind_pipeline_graphics(self.pipeline_tex.clone());
-			let buflen = vertex_buffer.len();
-			builder
-				.bind_vertex_buffers(0, vertex_buffer)
-				.draw(buflen as u32, 1, 0, 0)
-				.unwrap();
-			builder.end_render_pass().unwrap();
+			if let Some(texset) = texset {
+				let clear_values = vec![None];
+				builder
+					.begin_render_pass(
+						RenderPassBeginInfo {
+							clear_values,
+							..RenderPassBeginInfo::framebuffer(self.framebuffers[image_num].clone())
+						},
+						SubpassContents::Inline,
+					)
+					.unwrap()
+					.set_viewport(0, [viewport]);
+				builder.bind_descriptor_sets(
+					PipelineBindPoint::Graphics,
+					self.pipeline_tex.layout().clone(),
+					0,
+					vec![set, texset],
+				);
+				builder.bind_pipeline_graphics(self.pipeline_tex.clone());
+				let buflen = vertex_buffer.len();
+				builder
+					.bind_vertex_buffers(0, vertex_buffer)
+					.draw(buflen as u32, 1, 0, 0)
+					.unwrap();
+				builder.end_render_pass().unwrap();
+			} else {
+				eprintln!("ERROR: Texture set is empty, but vertex buffer is non-empty");
+			};
 		}
 	}
 

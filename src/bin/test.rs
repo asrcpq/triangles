@@ -4,16 +4,16 @@ use image::ImageBuffer;
 
 use triangles::model::Model;
 use triangles::model::SolidFace;
+use triangles::teximg::Teximg;
 use triangles::renderer::Renderer;
 
 fn main() {
 	let el = EventLoop::new();
-	let mut rdr = Renderer::new(
-		vec![ImageBuffer::from_fn(
-			1024, 1024, |_, _| image::Rgba::from([0, 0, 0, 255]),
-		)],
-		&el,
+	let mut rdr = Renderer::new(&el);
+	let image = ImageBuffer::from_fn(1024, 1024,
+		|_, _| image::Rgba::from([0, 0, 0, 255])
 	);
+	rdr.upload_tex(Teximg::from_image_buffer(image), 0);
 	el.run(move |event, _, ctrl| match event {
 		Event::WindowEvent {event: e, ..} => match e {
 			WindowEvent::CloseRequested => {
