@@ -24,6 +24,7 @@ pub struct Rmod {
 	renderpass_solid: VkwRenderPass,
 	renderpass_tex: VkwRenderPass,
 	pub texman: Texman,
+	texset: Option<VkwTextureSet>,
 }
 
 
@@ -36,7 +37,7 @@ impl Rmod {
 		let renderpass_tex =
 			get_render_pass_load(base.device.clone(), base.swapchain.clone());
 		let pipeline_solid = get_pipeline_solid(renderpass_solid.clone(), base.device.clone());
-		let pipeline_tex = get_pipeline_tex(renderpass_tex.clone(), base.device.clone());
+		let pipeline_tex = get_pipeline_tex(renderpass_tex.clone(), base.device.clone(), 0);
 
 		let framebuffers_solid = window_size_dependent_setup(renderpass_solid.clone(), &base.images);
 		let framebuffers_tex = window_size_dependent_setup(renderpass_tex.clone(), &base.images);
@@ -49,6 +50,7 @@ impl Rmod {
 			renderpass_solid,
 			renderpass_tex,
 			texman: Default::default(),
+			texset: None,
 		}
 	}
 
@@ -69,7 +71,10 @@ impl Rmod {
 		}
 		let result = CpuAccessibleBuffer::from_iter(
 			self.base.device.clone(),
-			BufferUsage::all(),
+			BufferUsage {
+				vertex_buffer: true,
+				..BufferUsage::empty()
+			},
 			false,
 			vertices.into_iter(),
 		).unwrap();
@@ -94,7 +99,10 @@ impl Rmod {
 		}
 		let result = CpuAccessibleBuffer::from_iter(
 			self.base.device.clone(),
-			BufferUsage::all(),
+			BufferUsage {
+				vertex_buffer: true,
+				..BufferUsage::empty()
+			},
 			false,
 			vertices.into_iter(),
 		).unwrap();
@@ -111,7 +119,10 @@ impl Rmod {
 	) {
 		let uniform_buffer = CpuAccessibleBuffer::from_data(
 			self.base.device.clone(),
-			BufferUsage::uniform_buffer(),
+			BufferUsage {
+				uniform_buffer: true,
+				..BufferUsage::empty()
+			},
 			false,
 			camera,
 		)
@@ -151,16 +162,21 @@ impl Rmod {
 
 		let vertex_buffer = self.generate_tex_vertex_buffer(&model);
 		if let Some(vertex_buffer) = vertex_buffer {
-			let texset = self.texman.compile_set(
-				self.base.device.clone(),
-				self.pipeline_tex
-					.layout()
-					.set_layouts()
-					.get(1)
-					.unwrap()
-					.clone(),
-			);
-			if let Some(texset) = texset {
+			if self.texman.get_dirty() {
+				let tex_len = self.texman.tex_len();
+				self.pipeline_tex = get_pipeline_tex(
+					self.renderpass_tex.clone(),
+					self.base.device.clone(),
+					tex_len as u32,
+				);
+				let layout = self.pipeline_tex.layout().set_layouts().get(1).unwrap();
+				let texset = self.texman.compile_set(
+					self.base.device.clone(),
+					layout.clone(),
+				);
+				self.texset = texset;
+			}
+			if let Some(texset) = self.texset.clone() {
 				let clear_values = vec![None];
 				builder
 					.begin_render_pass(

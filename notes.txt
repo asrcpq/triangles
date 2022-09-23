@@ -1,8 +1,9 @@
 # change:
-- fix clear value, use 2 framebuffers 2 render passes
+- dynamic load texture/sampler = bindless texture implementation
+	- based on the vulkano runtime array example
+- recreate pipeline and texture set on dirty
 
 # todo:
-- dynamic load texture/sampler
 - depth
 - objects manager
 - multiwindow

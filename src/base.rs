@@ -1,5 +1,6 @@
 use vulkano::instance::{Instance, InstanceCreateInfo};
 use vulkano_win::VkSurfaceBuild;
+use vulkano::VulkanLibrary;
 use winit::dpi::{LogicalSize, Size};
 use winit::event_loop::EventLoopWindowTarget;
 use winit::window::{Window, WindowBuilder};
@@ -23,12 +24,18 @@ impl Base {
 	pub fn new<E>(
 		el: &EventLoopWindowTarget<E>,
 	) -> Self {
-		let required_extensions = vulkano_win::required_extensions();
-		let instance = Instance::new(InstanceCreateInfo {
-			enabled_extensions: required_extensions,
-			..Default::default()
-		})
-		.unwrap();
+		let library = VulkanLibrary::new().unwrap();
+		let required_extensions = vulkano_win::required_extensions(&library);
+
+		let instance = Instance::new(
+			library,
+			InstanceCreateInfo {
+				enabled_extensions: required_extensions,
+				// Enable enumerating devices that use non-conformant vulkan implementations. (ex. MoltenVK)
+				enumerate_portability: true,
+				..Default::default()
+			},
+		).unwrap();
 		let surface = WindowBuilder::new()
 			.with_inner_size(winit_size([800, 600]))
 			//.with_resizable(false)

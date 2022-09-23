@@ -20,6 +20,7 @@ pub struct Texman {
 
 	image_views: Vec<VkwImageView>,
 	future: Option<VkwFuture>,
+	dirty: bool,
 }
 
 impl Texman {
@@ -59,18 +60,25 @@ impl Texman {
 		}
 		self.mapper.insert(id, self.image_views.len());
 		self.image_views.push(texture);
+		self.dirty = true;
+	}
+
+	pub fn tex_len(&mut self) -> usize {
+		self.gc();
+		self.image_views.len()
 	}
 
 	pub fn remove(&mut self, outer: usize) {
 		let inner = self.mapper.remove(&outer).unwrap();
+		self.dirty = true;
 		self.remove_list.push(inner);
 	}
 
-	pub fn compile_set(
-		&mut self,
-		device: VkwDevice,
-		layout: VkwTexLayout,
-	) -> Option<VkwTextureSet> {
+	pub fn get_dirty(&mut self) -> bool {
+		self.dirty
+	}
+
+	fn gc(&mut self) {
 		let mut new_mapper = HashMap::new();
 		let mut new_views = Vec::new();
 		for (outer, inner) in self.mapper.iter() {
@@ -81,9 +89,18 @@ impl Texman {
 			new_mapper.insert(*outer, new_views.len());
 			new_views.push(self.image_views[*inner].clone());
 		}
+		self.remove_list.clear();
 		self.mapper = new_mapper;
 		self.image_views = new_views;
+		self.dirty = false;
+	}
 
+	// NOTE: gc is called in tex_len, not called here!
+	pub fn compile_set(
+		&mut self,
+		device: VkwDevice,
+		layout: VkwTexLayout,
+	) -> Option<VkwTextureSet> {
 		if let Some(future) = self.future.take() {
 			future.flush().unwrap();
 		}
@@ -99,9 +116,10 @@ impl Texman {
 			}).collect();
 		if iter.is_empty() { return None }
 	
-		PersistentDescriptorSet::new(
+		Some(PersistentDescriptorSet::new_variable(
 			layout.clone(),
+			iter.len() as u32,
 			[WriteDescriptorSet::image_view_sampler_array(0, 0, iter)],
-		).ok()
+		).unwrap())
 	}
 }

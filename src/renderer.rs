@@ -5,6 +5,7 @@ use vulkano::pipeline::graphics::viewport::Viewport;
 use vulkano::swapchain::{
 	self, AcquireError, SwapchainCreateInfo, SwapchainCreationError,
 };
+use vulkano::swapchain::PresentInfo;
 use winit::event_loop::EventLoopWindowTarget;
 
 use crate::helper::*;
@@ -91,7 +92,7 @@ impl Renderer {
 		};
 		let mut builder = AutoCommandBufferBuilder::primary(
 			self.base.device.clone(),
-			self.base.queue.family(),
+			self.base.queue.queue_family_index(),
 			CommandBufferUsage::OneTimeSubmit,
 		).unwrap();
 		self.rmod.build_command(
@@ -112,8 +113,10 @@ impl Renderer {
 			.unwrap()
 			.then_swapchain_present(
 				self.base.queue.clone(),
-				self.base.swapchain.clone(),
-				image_num,
+				PresentInfo {
+					index: image_num,
+					..PresentInfo::swapchain(self.base.swapchain.clone())
+				},
 			)
 			.then_signal_fence_and_flush();
 		match future {

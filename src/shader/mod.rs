@@ -22,6 +22,8 @@ pub mod vs_tex {
 pub mod fs_tex {
 	vulkano_shaders::shader! {
 		ty: "fragment",
-		path: "src/shader/tex/frag.glsl"
+		vulkan_version: "1.2",
+		spirv_version: "1.5",
+		path: "src/shader/tex/frag.glsl",
 	}
 }
