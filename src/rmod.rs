@@ -17,10 +17,12 @@ type VertexTexBuffer = Arc<CpuAccessibleBuffer<[VertexTex]>>;
 
 pub struct Rmod {
 	base: Base,
-	framebuffers: Vec<VkwFramebuffer>,
+	framebuffers_solid: Vec<VkwFramebuffer>,
+	framebuffers_tex: Vec<VkwFramebuffer>,
 	pipeline_solid: VkwPipeline,
 	pipeline_tex: VkwPipeline,
 	renderpass_solid: VkwRenderPass,
+	renderpass_tex: VkwRenderPass,
 	pub texman: Texman,
 }
 
@@ -36,14 +38,16 @@ impl Rmod {
 		let pipeline_solid = get_pipeline_solid(renderpass_solid.clone(), base.device.clone());
 		let pipeline_tex = get_pipeline_tex(renderpass_tex.clone(), base.device.clone());
 
-		let framebuffers =
-			window_size_dependent_setup(renderpass_solid.clone(), &base.images);
+		let framebuffers_solid = window_size_dependent_setup(renderpass_solid.clone(), &base.images);
+		let framebuffers_tex = window_size_dependent_setup(renderpass_tex.clone(), &base.images);
 		Self {
 			base,
-			framebuffers,
+			framebuffers_solid,
+			framebuffers_tex,
 			pipeline_solid,
 			pipeline_tex,
 			renderpass_solid,
+			renderpass_tex,
 			texman: Default::default(),
 		}
 	}
@@ -125,7 +129,7 @@ impl Rmod {
 			builder.begin_render_pass(
 					RenderPassBeginInfo {
 						clear_values,
-						..RenderPassBeginInfo::framebuffer(self.framebuffers[image_num].clone())
+						..RenderPassBeginInfo::framebuffer(self.framebuffers_solid[image_num].clone())
 					},
 					SubpassContents::Inline,
 				)
@@ -162,7 +166,7 @@ impl Rmod {
 					.begin_render_pass(
 						RenderPassBeginInfo {
 							clear_values,
-							..RenderPassBeginInfo::framebuffer(self.framebuffers[image_num].clone())
+							..RenderPassBeginInfo::framebuffer(self.framebuffers_tex[image_num].clone())
 						},
 						SubpassContents::Inline,
 					)
@@ -188,8 +192,10 @@ impl Rmod {
 	}
 
 	pub fn update_framebuffers(&mut self, images: &VkwImages) {
-		self.framebuffers =
+		self.framebuffers_solid =
 			window_size_dependent_setup(self.renderpass_solid.clone(), images);
+		self.framebuffers_tex =
+			window_size_dependent_setup(self.renderpass_tex.clone(), images);
 	}
 }
 

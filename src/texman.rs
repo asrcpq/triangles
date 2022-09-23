@@ -30,8 +30,8 @@ impl Texman {
 		}
 		let (texture, future) = {
 			let dimensions = ImageDimensions::Dim2d {
-				width: image.dim[0],
-				height: image.dim[1],
+				width: 1024,
+				height: 1024,
 				array_layers: 1,
 			};
 			let format = Format::R8G8B8A8_SRGB;
@@ -74,6 +74,7 @@ impl Texman {
 		let mut new_mapper = HashMap::new();
 		let mut new_views = Vec::new();
 		for (outer, inner) in self.mapper.iter() {
+			eprintln!("{} -> {}", outer, inner);
 			if self.remove_list.iter().any(|x| x == inner) {
 				continue
 			}

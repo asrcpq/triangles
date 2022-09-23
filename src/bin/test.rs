@@ -3,7 +3,7 @@ use winit::event::{Event, WindowEvent};
 use image::ImageBuffer;
 
 use triangles::model::Model;
-use triangles::model::SolidFace;
+use triangles::model::{SolidFace, TexFace};
 use triangles::teximg::Teximg;
 use triangles::renderer::Renderer;
 
@@ -11,7 +11,7 @@ fn main() {
 	let el = EventLoop::new();
 	let mut rdr = Renderer::new(&el);
 	let image = ImageBuffer::from_fn(1024, 1024,
-		|_, _| image::Rgba::from([0, 0, 0, 255])
+		|x, y| image::Rgba::from([x as u8, y as u8, (x + y) as u8, 255])
 	);
 	rdr.upload_tex(Teximg::from_image_buffer(image), 0);
 	let mut vs = vec![
@@ -20,13 +20,20 @@ fn main() {
 		[200., 000., 0.0, 1.0],
 		[200., 200., 0.0, 1.0],
 	];
+	let uvs = vec![
+		[0.0, 0.0],
+		[0.0, 1.0],
+		[1.0, 1.0],
+		[1.0, 0.0],
+	];
 	let f1 = SolidFace {
 		vid: [0, 1, 2],
 		rgba: [1.0, 0.0, 0.0, 1.0],
 	};
-	let f2 = SolidFace {
+	let f2 = TexFace {
 		vid: [1, 2, 3],
-		rgba: [0.0, 0.0, 1.0, 1.0],
+		uvid: [0, 1, 2],
+		layer: 0,
 	};
 	el.run(move |event, _, ctrl| match event {
 		Event::WindowEvent {event: e, ..} => match e {
@@ -46,9 +53,9 @@ fn main() {
 			eprintln!("redraw");
 			let model = Model {
 				vs: vs.clone(),
-				uvs: Vec::new(),
-				tex_faces: Vec::new(),
-				solid_faces: vec![f1.clone(), f2.clone()],
+				uvs: uvs.clone(),
+				tex_faces: vec![f2.clone()],
+				solid_faces: vec![f1.clone()],
 			};
 			rdr.render2(&model);
 		}

@@ -1,6 +1,8 @@
 # change:
-- clear/load renderpass
+- fix clear value, use 2 framebuffers 2 render passes
 
 # todo:
+- dynamic load texture/sampler
 - depth
+- objects manager
 - multiwindow
