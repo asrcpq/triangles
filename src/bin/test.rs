@@ -7,6 +7,17 @@ use triangles::model::{SolidFace, TexFace};
 use triangles::renderer::Renderer;
 use triangles::teximg::Teximg;
 
+fn color(name: char) -> [f32; 4] {
+	match name {
+		'r' => [1.0, 0.0, 0.0, 1.0],
+		'g' => [0.0, 1.0, 0.0, 1.0],
+		'b' => [0.0, 0.0, 1.0, 1.0],
+		'w' => [1.0, 1.0, 1.0, 1.0],
+		't' => [0.0; 4],
+		c => panic!("{}", c),
+	}
+}
+
 fn main() {
 	let el = EventLoop::new();
 	let mut rdr = Renderer::new(&el);
@@ -16,20 +27,20 @@ fn main() {
 	rdr.upload_tex(Teximg::from_image_buffer(image), 0);
 	let mut vs = vec![
 		[000., 000., 0.0, 1.0],
-		[000., 200., 0.0, 1.0],
 		[200., 000., 0.0, 1.0],
-		[200., 200., 0.0, 1.0],
+		[400., 000., 0.0, 1.0],
+		[400., 200., 0.0, 1.0],
+		[400., 400., 0.0, 1.0],
+		[200., 400., 0.0, 1.0],
+		[000., 400., 0.0, 1.0],
+		[000., 200., 0.0, 1.0],
 	];
-	let uvs = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
-	let f1 = SolidFace {
-		vid: [0, 1, 2],
-		rgba: [1.0, 0.0, 0.0, 1.0],
-	};
-	let f2 = TexFace {
-		vid: [1, 2, 3],
-		uvid: [0, 1, 2],
-		layer: 0,
-	};
+	let fs = vec![
+		SolidFace { vid: [0, 7, 2], rgba: color('r') },
+		SolidFace { vid: [2, 1, 4], rgba: color('g') },
+		SolidFace { vid: [4, 3, 6], rgba: color('b') },
+		SolidFace { vid: [6, 5, 0], rgba: color('w') },
+	];
 	el.run(move |event, _, ctrl| match event {
 		Event::WindowEvent { event: e, .. } => match e {
 			WindowEvent::CloseRequested => {
@@ -48,9 +59,9 @@ fn main() {
 			eprintln!("redraw");
 			let model = Model {
 				vs: vs.clone(),
-				uvs: uvs.clone(),
-				tex_faces: vec![f2.clone()],
-				solid_faces: vec![f1.clone()],
+				uvs: vec![],
+				tex_faces: vec![],
+				solid_faces: fs.clone(),
 			};
 			rdr.render2(&model);
 		}
