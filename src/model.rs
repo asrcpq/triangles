@@ -4,7 +4,6 @@ use std::collections::HashMap;
 pub struct Model {
 	pub vs: Vec<[f32; 4]>,
 	pub uvs: Vec<[f32; 2]>,
-	pub solid_faces: Vec<SolidFace>,
 	pub tex_faces: Vec<TexFace>,
 	pub z: i32,
 }
@@ -14,12 +13,6 @@ pub struct TexFace {
 	pub vid: [usize; 3],
 	pub uvid: [usize; 3],
 	pub layer: u32,
-}
-
-#[derive(Clone)]
-pub struct SolidFace {
-	pub vid: [usize; 3],
-	pub rgba: [f32; 4],
 }
 
 #[derive(Default)]

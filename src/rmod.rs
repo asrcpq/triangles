@@ -24,18 +24,14 @@ use crate::helper::*;
 use crate::model::Model;
 use crate::shader;
 use crate::texman::Texman;
-use crate::vertex::{VertexSolid, VertexTex};
+use crate::vertex::VertexTex;
 
-type VertexSolidBuffer = Arc<CpuAccessibleBuffer<[VertexSolid]>>;
 type VertexTexBuffer = Arc<CpuAccessibleBuffer<[VertexTex]>>;
 
 pub struct Rmod {
 	base: Base,
-	framebuffers_solid: Vec<VkwFramebuffer>,
 	framebuffers_tex: Vec<VkwFramebuffer>,
-	pipeline_solid: VkwPipeline,
 	pipeline_tex: VkwPipeline,
-	renderpass_solid: VkwRenderPass,
 	renderpass_tex: VkwRenderPass,
 	pub texman: Texman,
 	texset: Option<VkwTextureSet>,
@@ -43,60 +39,20 @@ pub struct Rmod {
 
 impl Rmod {
 	pub fn new(base: Base) -> Self {
-		let renderpass_solid =
-			get_render_pass_clear(base.device.clone(), base.swapchain.clone());
 		let renderpass_tex =
-			get_render_pass_load(base.device.clone(), base.swapchain.clone());
-		let pipeline_solid =
-			get_pipeline_solid(renderpass_solid.clone(), base.device.clone());
+			get_render_pass_clear(base.device.clone(), base.swapchain.clone());
 		let pipeline_tex =
 			get_pipeline_tex(renderpass_tex.clone(), base.device.clone(), 0);
-
-		let framebuffers_solid =
-			window_size_dependent_setup(renderpass_solid.clone(), &base.images);
 		let framebuffers_tex =
 			window_size_dependent_setup(renderpass_tex.clone(), &base.images);
 		Self {
 			base,
-			framebuffers_solid,
 			framebuffers_tex,
-			pipeline_solid,
 			pipeline_tex,
-			renderpass_solid,
 			renderpass_tex,
 			texman: Default::default(),
 			texset: None,
 		}
-	}
-
-	fn generate_solid_vertex_buffer(
-		&self,
-		model: &Model,
-	) -> Option<VertexSolidBuffer> {
-		let vertices = model
-			.solid_faces
-			.iter()
-			.flat_map(|face| {
-				(0..3).map(|i| VertexSolid {
-					pos: model.vs[face.vid[i]],
-					rgba: face.rgba,
-				})
-			})
-			.collect::<Vec<_>>();
-		if vertices.is_empty() {
-			return None;
-		}
-		let result = CpuAccessibleBuffer::from_iter(
-			self.base.device.clone(),
-			BufferUsage {
-				vertex_buffer: true,
-				..BufferUsage::empty()
-			},
-			false,
-			vertices.into_iter(),
-		)
-		.unwrap();
-		Some(result)
 	}
 
 	fn generate_tex_vertex_buffer(
@@ -149,42 +105,12 @@ impl Rmod {
 		)
 		.unwrap();
 
-		let layout = self.pipeline_solid.layout().set_layouts().get(0).unwrap();
+		let layout = self.pipeline_tex.layout().set_layouts().get(0).unwrap();
 		let set = PersistentDescriptorSet::new(
 			layout.clone(),
 			[WriteDescriptorSet::buffer(0, uniform_buffer)],
 		)
 		.unwrap();
-
-		let vertex_buffer = self.generate_solid_vertex_buffer(&model);
-		if let Some(vertex_buffer) = vertex_buffer {
-			let clear_values = vec![Some([0.0, 0.0, 0.0, 1.0].into())];
-			builder
-				.begin_render_pass(
-					RenderPassBeginInfo {
-						clear_values,
-						..RenderPassBeginInfo::framebuffer(
-							self.framebuffers_solid[image_num].clone(),
-						)
-					},
-					SubpassContents::Inline,
-				)
-				.unwrap()
-				.set_viewport(0, [viewport.clone()]);
-			builder.bind_pipeline_graphics(self.pipeline_solid.clone());
-			builder.bind_descriptor_sets(
-				PipelineBindPoint::Graphics,
-				self.pipeline_solid.layout().clone(),
-				0,
-				vec![set.clone()],
-			);
-			let buflen = vertex_buffer.len();
-			builder
-				.bind_vertex_buffers(0, vertex_buffer)
-				.draw(buflen as u32, 1, 0, 0)
-				.unwrap();
-			builder.end_render_pass().unwrap();
-		}
 
 		let vertex_buffer = self.generate_tex_vertex_buffer(&model);
 		if let Some(vertex_buffer) = vertex_buffer {
@@ -203,7 +129,7 @@ impl Rmod {
 				self.texset = texset;
 			}
 			if let Some(texset) = self.texset.clone() {
-				let clear_values = vec![None];
+				let clear_values = vec![Some([0.0; 4].into())];
 				builder
 					.begin_render_pass(
 						RenderPassBeginInfo {
@@ -236,8 +162,6 @@ impl Rmod {
 	}
 
 	pub fn update_framebuffers(&mut self, images: &VkwImages) {
-		self.framebuffers_solid =
-			window_size_dependent_setup(self.renderpass_solid.clone(), images);
 		self.framebuffers_tex =
 			window_size_dependent_setup(self.renderpass_tex.clone(), images);
 	}
@@ -265,55 +189,13 @@ pub fn get_render_pass_clear<W>(
 	.unwrap()
 }
 
-pub fn get_render_pass_load<W>(
-	device: VkwDevice,
-	swapchain: VkwSwapchain<W>,
-) -> VkwRenderPass {
-	vulkano::single_pass_renderpass!(
-		device,
-		attachments: {
-			color: {
-				load: Load,
-				store: Store,
-				format: swapchain.image_format(),
-				samples: 1,
-			}
-		},
-		pass: {
-			color: [color],
-			depth_stencil: {}
-		}
-	)
-	.unwrap()
-}
-
-pub fn get_pipeline_solid(
-	render_pass: VkwRenderPass,
-	device: VkwDevice,
-) -> VkwPipeline {
-	let vs = shader::vs_solid::load(device.clone()).unwrap();
-	let fs = shader::fs_solid::load(device.clone()).unwrap();
-	let pipeline = GraphicsPipeline::start()
-		.vertex_input_state(BuffersDefinition::new().vertex::<VertexSolid>())
-		.vertex_shader(vs.entry_point("main").unwrap(), ())
-		.input_assembly_state(
-			InputAssemblyState::new().topology(PrimitiveTopology::TriangleList),
-		)
-		.viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
-		.fragment_shader(fs.entry_point("main").unwrap(), ())
-		.render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
-		.build(device.clone())
-		.unwrap();
-	pipeline
-}
-
 pub fn get_pipeline_tex(
 	render_pass: VkwRenderPass,
 	device: VkwDevice,
 	tex_len: u32,
 ) -> VkwPipeline {
-	let vs = shader::vs_tex::load(device.clone()).unwrap();
-	let fs = shader::fs_tex::load(device.clone()).unwrap();
+	let vs = shader::vs::load(device.clone()).unwrap();
+	let fs = shader::fs::load(device.clone()).unwrap();
 	let mut layout_create_infos: Vec<_> =
 		DescriptorSetLayoutCreateInfo::from_requirements(
 			vs.entry_point("main")

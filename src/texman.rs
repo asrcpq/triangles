@@ -31,8 +31,8 @@ impl Texman {
 		}
 		let (texture, future) = {
 			let dimensions = ImageDimensions::Dim2d {
-				width: 1024,
-				height: 1024,
+				width: image.dim[0],
+				height: image.dim[1],
 				array_layers: 1,
 			};
 			let format = Format::R8G8B8A8_SRGB;
@@ -112,7 +112,7 @@ impl Texman {
 			.map(|view| {
 				let sampler = Sampler::new(
 					device.clone(),
-					SamplerCreateInfo::simple_repeat_linear(),
+					SamplerCreateInfo::default(),
 				)
 				.unwrap();
 				(view as _, sampler)

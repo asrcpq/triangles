@@ -1,5 +1,6 @@
 # change:
-- fix tex_layer idx mapping
+- remove solid pipeline
+- add 16 bit color texture preset palette
 
 # todo:
 - depth

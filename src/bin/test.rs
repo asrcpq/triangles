@@ -1,33 +1,32 @@
-use image::ImageBuffer;
 use winit::event::{Event, WindowEvent, ElementState};
 use winit::event_loop::{ControlFlow, EventLoop};
 
 use triangles::model::Model;
-use triangles::model::{
-	SolidFace,
-//	TexFace,
-};
+use triangles::model::TexFace;
 use triangles::renderer::Renderer;
 use triangles::teximg::Teximg;
 
-fn color(name: char) -> [f32; 4] {
+fn color(name: char) -> [u8; 3] {
 	match name {
-		'r' => [1.0, 0.0, 0.0, 1.0],
-		'g' => [0.0, 1.0, 0.0, 1.0],
-		'b' => [0.0, 0.0, 1.0, 1.0],
-		'w' => [1.0, 1.0, 1.0, 1.0],
-		't' => [0.0; 4],
+		'r' => [255, 0, 0],
+		'g' => [0, 255, 0],
+		'b' => [0, 0, 255],
+		'w' => [255, 255, 255],
 		c => panic!("{}", c),
 	}
+}
+
+fn rgb_to_16uv(rgb: [u8; 3]) -> [f32; 2] {
+	let xr = (rgb[0] / 8) as f32 / 32.0;
+	let xb = rgb[2] as f32 / 256.0 / 32.0;
+	let xg = rgb[1] as f32 / 4.0;
+	[xr + xb, xg]
 }
 
 fn main() {
 	let el = EventLoop::new();
 	let mut rdr = Renderer::new(&el);
-	let image = ImageBuffer::from_fn(1024, 1024, |x, y| {
-		image::Rgba::from([x as u8, y as u8, (x + y) as u8, 255])
-	});
-	rdr.upload_tex(Teximg::from_image_buffer(image), 0);
+	rdr.upload_tex(Teximg::preset_rgb565(), 0);
 	let mut vs = vec![
 		[000., 000., 0.0, 1.0],
 		[200., 000., 0.0, 1.0],
@@ -39,11 +38,18 @@ fn main() {
 		[000., 200., 0.0, 1.0],
 	];
 	let mut phase = 0f32;
+	let uvs = vec![
+		rgb_to_16uv(color('r')),
+		rgb_to_16uv(color('g')),
+		rgb_to_16uv(color('b')),
+		rgb_to_16uv(color('w')),
+	];
+	eprintln!("{:?}", uvs);
 	let fs = vec![
-		SolidFace { vid: [0, 7, 2], rgba: color('r') },
-		SolidFace { vid: [2, 1, 4], rgba: color('g') },
-		SolidFace { vid: [4, 3, 6], rgba: color('b') },
-		SolidFace { vid: [6, 5, 0], rgba: color('w') },
+		TexFace { vid: [0, 7, 2], layer: 0, uvid: [0; 3] },
+		TexFace { vid: [2, 1, 4], layer: 0, uvid: [1; 3] },
+		TexFace { vid: [4, 3, 6], layer: 0, uvid: [2; 3] },
+		TexFace { vid: [6, 5, 0], layer: 0, uvid: [3; 3] },
 	];
 	el.run(move |event, _, ctrl| match event {
 		Event::WindowEvent { event: e, .. } => match e {
@@ -72,9 +78,8 @@ fn main() {
 			}
 			let model = Model {
 				vs: vs.clone(),
-				uvs: vec![],
-				tex_faces: vec![],
-				solid_faces: fs.clone(),
+				uvs: uvs.clone(),
+				tex_faces: fs.clone(),
 				z: 0,
 			};
 			rdr.render2(&model);
