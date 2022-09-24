@@ -110,7 +110,7 @@ impl Rmod {
 				(0..3).map(|i| VertexTex {
 					pos: model.vs[face.vid[i]],
 					tex_coord: model.uvs[face.uvid[i]],
-					tex_layer: face.layer as i32,
+					tex_layer: *self.texman.mapper.get(&face.layer).unwrap() as i32,
 				})
 			})
 			.collect::<Vec<_>>();

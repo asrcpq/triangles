@@ -11,7 +11,7 @@ use crate::teximg::Teximg;
 
 #[derive(Default)]
 pub struct Texman {
-	pub mapper: HashMap<usize, usize>,
+	pub mapper: HashMap<u32, usize>,
 
 	// pending remove_list record inner id only,
 	// when an inner get pushed, it must have already been deleted from mapper
@@ -25,7 +25,7 @@ pub struct Texman {
 
 impl Texman {
 	// removed when TexHandle dropped
-	pub fn upload(&mut self, image: Teximg, id: usize, queue: VkwQueue) {
+	pub fn upload(&mut self, image: Teximg, id: u32, queue: VkwQueue) {
 		if let Some(id_inner) = self.mapper.get(&id) {
 			self.remove_list.push(*id_inner);
 		}
@@ -69,7 +69,7 @@ impl Texman {
 		self.image_views.len()
 	}
 
-	pub fn remove(&mut self, outer: usize) {
+	pub fn remove(&mut self, outer: u32) {
 		let inner = self.mapper.remove(&outer).unwrap();
 		self.dirty = true;
 		self.remove_list.push(inner);

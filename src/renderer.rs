@@ -53,11 +53,11 @@ impl Renderer {
 		self.base.surface.window().request_redraw();
 	}
 
-	pub fn upload_tex(&mut self, image: Teximg, id: usize) {
+	pub fn upload_tex(&mut self, image: Teximg, id: u32) {
 		self.rmod.texman.upload(image, id, self.base.queue.clone());
 	}
 
-	pub fn remove_tex(&mut self, outer: usize) {
+	pub fn remove_tex(&mut self, outer: u32) {
 		self.rmod.texman.remove(outer);
 	}
 
@@ -68,7 +68,7 @@ impl Renderer {
 	pub fn render2(&mut self, model: &Model) {
 		let [w, h]: [u32; 2] = self.base.surface.window().inner_size().into();
 		let [w, h] = [w as f32, h as f32];
-		let camera = M4::new_orthographic(0., w, 0., h, 1., -1.);
+		let camera = M4::new_orthographic(0., w, 0., h, 1.0, -1.0);
 		self.render(model, camera);
 	}
 

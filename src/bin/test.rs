@@ -1,9 +1,12 @@
 use image::ImageBuffer;
-use winit::event::{Event, WindowEvent};
+use winit::event::{Event, WindowEvent, ElementState};
 use winit::event_loop::{ControlFlow, EventLoop};
 
 use triangles::model::Model;
-use triangles::model::{SolidFace, TexFace};
+use triangles::model::{
+	SolidFace,
+//	TexFace,
+};
 use triangles::renderer::Renderer;
 use triangles::teximg::Teximg;
 
@@ -35,6 +38,7 @@ fn main() {
 		[000., 400., 0.0, 1.0],
 		[000., 200., 0.0, 1.0],
 	];
+	let mut phase = 0f32;
 	let fs = vec![
 		SolidFace { vid: [0, 7, 2], rgba: color('r') },
 		SolidFace { vid: [2, 1, 4], rgba: color('g') },
@@ -49,19 +53,29 @@ fn main() {
 			WindowEvent::Resized(_) => {
 				rdr.damage();
 			}
-			WindowEvent::KeyboardInput { .. } => {
-				vs.iter_mut().for_each(|x| x[0] += 10.0);
-				rdr.redraw();
+			WindowEvent::KeyboardInput { 
+				input,
+				..
+			} => {
+				if input.state == ElementState::Pressed {
+					phase += 0.1;
+					rdr.redraw();
+				}
 			}
 			_ => {}
 		},
 		Event::RedrawRequested(_window_id) => {
 			eprintln!("redraw");
+			for idx in 0..8 {
+				let angle = phase + idx as f32 / 8.0 * 2.0 * std::f32::consts::PI;
+				vs[idx][2] = angle.sin() / 2.0 + 0.5;
+			}
 			let model = Model {
 				vs: vs.clone(),
 				uvs: vec![],
 				tex_faces: vec![],
 				solid_faces: fs.clone(),
+				z: 0,
 			};
 			rdr.render2(&model);
 		}

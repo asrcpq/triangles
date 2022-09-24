@@ -1,5 +1,5 @@
 # change:
-- prepare new test for depth implementation
+- fix tex_layer idx mapping
 
 # todo:
 - depth
