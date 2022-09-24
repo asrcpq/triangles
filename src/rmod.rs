@@ -1,5 +1,4 @@
-use std::sync::Arc;
-use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess};
+use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
 use vulkano::command_buffer::{RenderPassBeginInfo, SubpassContents};
 use vulkano::descriptor_set::layout::{
 	DescriptorSetLayout, DescriptorSetLayoutCreateInfo,
@@ -21,12 +20,10 @@ use vulkano::render_pass::{Framebuffer, FramebufferCreateInfo, Subpass};
 use crate::base::Base;
 use crate::camera::Camera;
 use crate::helper::*;
-use crate::model::Model;
 use crate::shader;
+use crate::modelman::Modelman;
 use crate::texman::Texman;
 use crate::vertex::VertexTex;
-
-type VertexTexBuffer = Arc<CpuAccessibleBuffer<[VertexTex]>>;
 
 pub struct Rmod {
 	base: Base,
@@ -34,15 +31,17 @@ pub struct Rmod {
 	pipeline_tex: VkwPipeline,
 	renderpass_tex: VkwRenderPass,
 	pub texman: Texman,
+	pub modelman: Modelman,
 	texset: Option<VkwTextureSet>,
 }
 
 impl Rmod {
 	pub fn new(base: Base) -> Self {
+		let device = base.device.clone();
 		let renderpass_tex =
-			get_render_pass_clear(base.device.clone(), base.swapchain.clone());
+			get_render_pass_clear(device.clone(), base.swapchain.clone());
 		let pipeline_tex =
-			get_pipeline_tex(renderpass_tex.clone(), base.device.clone(), 0);
+			get_pipeline_tex(renderpass_tex.clone(), device.clone(), 0);
 		let framebuffers_tex =
 			window_size_dependent_setup(renderpass_tex.clone(), &base.images);
 		Self {
@@ -51,46 +50,15 @@ impl Rmod {
 			pipeline_tex,
 			renderpass_tex,
 			texman: Default::default(),
+			modelman: Modelman::new(device),
 			texset: None,
 		}
-	}
-
-	fn generate_tex_vertex_buffer(
-		&self,
-		model: &Model,
-	) -> Option<VertexTexBuffer> {
-		let vertices = model
-			.tex_faces
-			.iter()
-			.flat_map(|face| {
-				(0..3).map(|i| VertexTex {
-					pos: model.vs[face.vid[i]],
-					tex_coord: model.uvs[face.uvid[i]],
-					tex_layer: *self.texman.mapper.get(&face.layer).unwrap() as i32,
-				})
-			})
-			.collect::<Vec<_>>();
-		if vertices.is_empty() {
-			return None;
-		}
-		let result = CpuAccessibleBuffer::from_iter(
-			self.base.device.clone(),
-			BufferUsage {
-				vertex_buffer: true,
-				..BufferUsage::empty()
-			},
-			false,
-			vertices.into_iter(),
-		)
-		.unwrap();
-		Some(result)
 	}
 
 	pub fn build_command(
 		&mut self,
 		builder: &mut VkwCommandBuilder,
 		image_num: usize,
-		model: &Model,
 		camera: Camera,
 		viewport: Viewport,
 	) {
@@ -112,53 +80,48 @@ impl Rmod {
 		)
 		.unwrap();
 
-		let vertex_buffer = self.generate_tex_vertex_buffer(&model);
-		if let Some(vertex_buffer) = vertex_buffer {
-			if self.texman.get_dirty() {
-				let tex_len = self.texman.tex_len();
-				self.pipeline_tex = get_pipeline_tex(
-					self.renderpass_tex.clone(),
-					self.base.device.clone(),
-					tex_len as u32,
-				);
-				let layout =
-					self.pipeline_tex.layout().set_layouts().get(1).unwrap();
-				let texset = self
-					.texman
-					.compile_set(self.base.device.clone(), layout.clone());
-				self.texset = texset;
-			}
-			if let Some(texset) = self.texset.clone() {
-				let clear_values = vec![Some([0.0; 4].into())];
-				builder
-					.begin_render_pass(
-						RenderPassBeginInfo {
-							clear_values,
-							..RenderPassBeginInfo::framebuffer(
-								self.framebuffers_tex[image_num].clone(),
-							)
-						},
-						SubpassContents::Inline,
-					)
-					.unwrap()
-					.set_viewport(0, [viewport]);
-				builder.bind_descriptor_sets(
-					PipelineBindPoint::Graphics,
-					self.pipeline_tex.layout().clone(),
-					0,
-					vec![set, texset],
-				);
-				builder.bind_pipeline_graphics(self.pipeline_tex.clone());
-				let buflen = vertex_buffer.len();
-				builder
-					.bind_vertex_buffers(0, vertex_buffer)
-					.draw(buflen as u32, 1, 0, 0)
-					.unwrap();
-				builder.end_render_pass().unwrap();
-			} else {
-				eprintln!("ERROR: Texture set is empty, but vertex buffer is non-empty");
-			};
+		let count = self.modelman.write_buffer();
+		if self.texman.get_dirty() {
+			let tex_len = self.texman.tex_len();
+			self.pipeline_tex = get_pipeline_tex(
+				self.renderpass_tex.clone(),
+				self.base.device.clone(),
+				tex_len as u32,
+			);
+			let layout =
+				self.pipeline_tex.layout().set_layouts().get(1).unwrap();
+			let texset = self
+				.texman
+				.compile_set(self.base.device.clone(), layout.clone());
+			self.texset = texset;
 		}
+		let texset = self.texset.clone().unwrap();
+		let clear_values = vec![Some([0.0; 4].into())];
+		builder
+			.begin_render_pass(
+				RenderPassBeginInfo {
+					clear_values,
+					..RenderPassBeginInfo::framebuffer(
+						self.framebuffers_tex[image_num].clone(),
+					)
+				},
+				SubpassContents::Inline,
+			)
+			.unwrap()
+			.set_viewport(0, [viewport]);
+		builder.bind_descriptor_sets(
+			PipelineBindPoint::Graphics,
+			self.pipeline_tex.layout().clone(),
+			0,
+			vec![set, texset],
+		);
+		let buffer = self.modelman.buffer.clone();
+		builder.bind_pipeline_graphics(self.pipeline_tex.clone());
+		builder
+			.bind_vertex_buffers(0, buffer)
+			.draw(count as u32, 1, 0, 0)
+			.unwrap();
+		builder.end_render_pass().unwrap();
 	}
 
 	pub fn update_framebuffers(&mut self, images: &VkwImages) {

@@ -3,7 +3,7 @@ use vulkano::device::{
 	Device, DeviceCreateInfo, DeviceExtensions, Features, QueueCreateInfo,
 };
 use vulkano::image::ImageUsage;
-use vulkano::instance::{Instance, InstanceCreateInfo};
+use vulkano::instance::{Instance, InstanceCreateInfo, InstanceExtensions};
 use vulkano::swapchain::{Swapchain, SwapchainCreateInfo};
 use vulkano::VulkanLibrary;
 use vulkano_win::VkSurfaceBuild;
@@ -15,6 +15,7 @@ use crate::helper::*;
 
 #[derive(Clone)]
 pub struct Base {
+	pub instance: VkwInstance,
 	pub device: VkwDevice,
 	pub queue: VkwQueue,
 	pub surface: VkwSurface<Window>,
@@ -30,13 +31,17 @@ impl Base {
 	pub fn new<E>(el: &EventLoopWindowTarget<E>) -> Self {
 		let library = VulkanLibrary::new().unwrap();
 		let required_extensions = vulkano_win::required_extensions(&library);
+		let extensions = InstanceExtensions {
+			ext_debug_utils: true,
+			..InstanceExtensions::empty()
+		};
 
+		let layers = vec!["VK_LAYER_KHRONOS_validation".to_owned()];
 		let instance = Instance::new(
 			library,
 			InstanceCreateInfo {
-				enabled_extensions: required_extensions,
-				// Enable enumerating devices that use non-conformant vulkan implementations. (ex. MoltenVK)
-				enumerate_portability: true,
+				enabled_extensions: required_extensions & extensions,
+				enabled_layers: layers,
 				..Default::default()
 			},
 		)
@@ -56,6 +61,7 @@ impl Base {
 			surface.clone(),
 		);
 		Self {
+			instance,
 			device,
 			queue,
 			surface,

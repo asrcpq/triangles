@@ -1,8 +1,10 @@
 # change:
-- remove solid pipeline
-- add 16 bit color texture preset palette
+- add model manager, the vertex won't be recompiled every time
 
-# todo:
+# next:
 - depth
-- objects manager
 - multiwindow
+
+# future:
+- reuse command buffer
+- reuse data in vertex buffer

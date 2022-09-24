@@ -27,7 +27,7 @@ fn main() {
 	let el = EventLoop::new();
 	let mut rdr = Renderer::new(&el);
 	rdr.upload_tex(Teximg::preset_rgb565(), 0);
-	let mut vs = vec![
+	let vs = vec![
 		[000., 000., 0.0, 1.0],
 		[200., 000., 0.0, 1.0],
 		[400., 000., 0.0, 1.0],
@@ -37,20 +37,27 @@ fn main() {
 		[000., 400., 0.0, 1.0],
 		[000., 200., 0.0, 1.0],
 	];
-	let mut phase = 0f32;
+	let mut phase = 0u32;
 	let uvs = vec![
 		rgb_to_16uv(color('r')),
 		rgb_to_16uv(color('g')),
 		rgb_to_16uv(color('b')),
 		rgb_to_16uv(color('w')),
 	];
-	eprintln!("{:?}", uvs);
 	let fs = vec![
 		TexFace { vid: [0, 7, 2], layer: 0, uvid: [0; 3] },
 		TexFace { vid: [2, 1, 4], layer: 0, uvid: [1; 3] },
 		TexFace { vid: [4, 3, 6], layer: 0, uvid: [2; 3] },
 		TexFace { vid: [6, 5, 0], layer: 0, uvid: [3; 3] },
 	];
+	for (idx, face) in fs.into_iter().enumerate() {
+		let model = Model {
+			vs: vs.clone(),
+			uvs: uvs.clone(),
+			tex_faces: vec![face],
+		};
+		rdr.insert_model(idx as u32, &model);
+	}
 	el.run(move |event, _, ctrl| match event {
 		Event::WindowEvent { event: e, .. } => match e {
 			WindowEvent::CloseRequested => {
@@ -64,7 +71,8 @@ fn main() {
 				..
 			} => {
 				if input.state == ElementState::Pressed {
-					phase += 0.1;
+					phase += 1;
+					rdr.set_visibility(phase % 4, phase % 3 == 2);
 					rdr.redraw();
 				}
 			}
@@ -72,17 +80,7 @@ fn main() {
 		},
 		Event::RedrawRequested(_window_id) => {
 			eprintln!("redraw");
-			for idx in 0..8 {
-				let angle = phase + idx as f32 / 8.0 * 2.0 * std::f32::consts::PI;
-				vs[idx][2] = angle.sin() / 2.0 + 0.5;
-			}
-			let model = Model {
-				vs: vs.clone(),
-				uvs: uvs.clone(),
-				tex_faces: fs.clone(),
-				z: 0,
-			};
-			rdr.render2(&model);
+			rdr.render2();
 		}
 		Event::MainEventsCleared => {
 			eprintln!("idle");

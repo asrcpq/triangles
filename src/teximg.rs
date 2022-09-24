@@ -26,7 +26,6 @@ impl Teximg {
 				255,
 			])
 		});
-		image.save("test.png");
 		Self::from_image_buffer(image)
 	}
 }
