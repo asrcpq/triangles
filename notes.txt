@@ -1,7 +1,5 @@
 # change:
-- dynamic load texture/sampler = bindless texture implementation
-	- based on the vulkano runtime array example
-- recreate pipeline and texture set on dirty
+- fmt
 
 # todo:
 - depth

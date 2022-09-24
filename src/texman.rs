@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use vulkano::descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet};
-use vulkano::sampler::{Sampler, SamplerCreateInfo};
-use vulkano::image::{ImageDimensions, ImmutableImage, MipmapsCount};
-use vulkano::image::view::{ImageView, ImageViewCreateInfo, ImageViewType};
-use vulkano::sync::GpuFuture;
 use vulkano::format::Format;
+use vulkano::image::view::{ImageView, ImageViewCreateInfo, ImageViewType};
+use vulkano::image::{ImageDimensions, ImmutableImage, MipmapsCount};
+use vulkano::sampler::{Sampler, SamplerCreateInfo};
+use vulkano::sync::GpuFuture;
 
 use crate::helper::*;
 use crate::teximg::Teximg;
@@ -42,7 +42,8 @@ impl Texman {
 				MipmapsCount::One,
 				format,
 				queue,
-			).unwrap();
+			)
+			.unwrap();
 			let image_view = ImageView::new(
 				image.clone(),
 				ImageViewCreateInfo {
@@ -84,7 +85,7 @@ impl Texman {
 		for (outer, inner) in self.mapper.iter() {
 			eprintln!("{} -> {}", outer, inner);
 			if self.remove_list.iter().any(|x| x == inner) {
-				continue
+				continue;
 			}
 			new_mapper.insert(*outer, new_views.len());
 			new_views.push(self.image_views[*inner].clone());
@@ -104,22 +105,30 @@ impl Texman {
 		if let Some(future) = self.future.take() {
 			future.flush().unwrap();
 		}
-		let iter: Vec<_> = self.image_views
+		let iter: Vec<_> = self
+			.image_views
 			.iter()
 			.cloned()
 			.map(|view| {
 				let sampler = Sampler::new(
 					device.clone(),
 					SamplerCreateInfo::simple_repeat_linear(),
-				).unwrap();
+				)
+				.unwrap();
 				(view as _, sampler)
-			}).collect();
-		if iter.is_empty() { return None }
-	
-		Some(PersistentDescriptorSet::new_variable(
-			layout.clone(),
-			iter.len() as u32,
-			[WriteDescriptorSet::image_view_sampler_array(0, 0, iter)],
-		).unwrap())
+			})
+			.collect();
+		if iter.is_empty() {
+			return None;
+		}
+
+		Some(
+			PersistentDescriptorSet::new_variable(
+				layout.clone(),
+				iter.len() as u32,
+				[WriteDescriptorSet::image_view_sampler_array(0, 0, iter)],
+			)
+			.unwrap(),
+		)
 	}
 }

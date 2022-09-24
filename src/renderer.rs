@@ -1,20 +1,20 @@
-use vulkano::sync::{self, GpuFuture, FlushError};
-use vulkano::image::ImageAccess;
 use vulkano::command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage};
+use vulkano::image::ImageAccess;
 use vulkano::pipeline::graphics::viewport::Viewport;
+use vulkano::swapchain::PresentInfo;
 use vulkano::swapchain::{
 	self, AcquireError, SwapchainCreateInfo, SwapchainCreationError,
 };
-use vulkano::swapchain::PresentInfo;
+use vulkano::sync::{self, FlushError, GpuFuture};
 use winit::event_loop::EventLoopWindowTarget;
 
-use crate::helper::*;
 use crate::base::Base;
-use crate::rmod::Rmod;
-use crate::model::Model;
-use crate::M4;
 use crate::camera::Camera;
+use crate::helper::*;
+use crate::model::Model;
+use crate::rmod::Rmod;
 use crate::teximg::Teximg;
+use crate::M4;
 
 pub struct Renderer {
 	base: Base,
@@ -26,9 +26,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-	pub fn new<E>(
-		el: &EventLoopWindowTarget<E>,
-	) -> Self {
+	pub fn new<E>(el: &EventLoopWindowTarget<E>) -> Self {
 		let base = Base::new(el);
 		let prev = Some(sync::now(base.device.clone()).boxed());
 		let rmod = Rmod::new(base.clone());
@@ -63,11 +61,12 @@ impl Renderer {
 		self.rmod.texman.remove(outer);
 	}
 
-	pub fn damage(&mut self) { self.dirty = true; }
+	pub fn damage(&mut self) {
+		self.dirty = true;
+	}
 
 	pub fn render2(&mut self, model: &Model) {
-		let [w, h]: [u32; 2] =
-			self.base.surface.window().inner_size().into();
+		let [w, h]: [u32; 2] = self.base.surface.window().inner_size().into();
 		let [w, h] = [w as f32, h as f32];
 		let camera = M4::new_orthographic(0., w, 0., h, 1., -1.);
 		self.render(model, camera);
@@ -94,12 +93,15 @@ impl Renderer {
 			self.base.device.clone(),
 			self.base.queue.queue_family_index(),
 			CommandBufferUsage::OneTimeSubmit,
-		).unwrap();
+		)
+		.unwrap();
 		self.rmod.build_command(
 			&mut builder,
 			image_num,
 			model,
-			Camera {data: camera.into()},
+			Camera {
+				data: camera.into(),
+			},
 			self.viewport.clone(),
 		);
 		let command_buffer = Box::new(builder.build().unwrap());
@@ -125,8 +127,7 @@ impl Renderer {
 			}
 			Err(FlushError::OutOfDate) => {
 				self.dirty = true;
-				self.prev =
-					Some(sync::now(self.base.device.clone()).boxed());
+				self.prev = Some(sync::now(self.base.device.clone()).boxed());
 			}
 			Err(e) => {
 				println!("Failed to flush future: {:?}", e);
