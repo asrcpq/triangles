@@ -21,10 +21,10 @@ pub struct Modelman {
 }
 
 impl Modelman {
-	pub fn new(device: VkwDevice) -> Self {
+	pub fn new(memalloc: VkwMemAlloc) -> Self {
 		let buffer = unsafe {
 			CpuAccessibleBuffer::uninitialized(
-				device.clone(),
+				&memalloc,
 				BufferUsage {
 					vertex_buffer: true,
 					..BufferUsage::empty()

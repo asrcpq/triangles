@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-vulkano = {git = "https://github.com/vulkano-rs/vulkano"}
-vulkano-shaders = {git = "https://github.com/vulkano-rs/vulkano"}
-vulkano-win = {git = "https://github.com/vulkano-rs/vulkano"}
+vulkano = "0.32"
+vulkano-shaders = "0.32"
+vulkano-win = "0.32"
 nalgebra = "0.31"
 winit = "0.27"
 

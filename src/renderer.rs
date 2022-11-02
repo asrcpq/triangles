@@ -2,7 +2,7 @@ use std::sync::Arc;
 use vulkano::command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage};
 use vulkano::image::ImageAccess;
 use vulkano::pipeline::graphics::viewport::Viewport;
-use vulkano::swapchain::PresentInfo;
+use vulkano::swapchain::SwapchainPresentInfo;
 use vulkano::swapchain::{
 	self, AcquireError, SwapchainCreateInfo, SwapchainCreationError,
 };
@@ -14,6 +14,7 @@ use vulkano::instance::debug::{
 	DebugUtilsMessageSeverity,
 };
 use winit::event_loop::EventLoopWindowTarget;
+use winit::window::Window;
 
 use crate::base::Base;
 use crate::camera::Camera;
@@ -55,16 +56,34 @@ impl Renderer {
 		}
 	}
 
+	fn get_window(&self) -> &Window {
+		self.base.surface.object().unwrap().downcast_ref::<Window>().unwrap()
+	}
+
 	pub fn get_size(&self) -> [u32; 2] {
-		self.base.surface.window().inner_size().into()
+		self.get_window().inner_size().into()
 	}
 
 	pub fn redraw(&mut self) {
-		self.base.surface.window().request_redraw();
+		self.get_window().request_redraw();
 	}
 
 	pub fn upload_tex(&mut self, image: Teximg, id: u32) {
-		self.rmod.texman.upload(image, id, self.base.queue.clone());
+		let mut builder = AutoCommandBufferBuilder::primary(
+			&self.base.comalloc,
+			self.base.queue.queue_family_index(),
+			CommandBufferUsage::OneTimeSubmit,
+		).unwrap();
+		self.rmod.texman.upload(image, id, self.base.memalloc.clone(), &mut builder);
+		let command_buffer = Box::new(builder.build().unwrap());
+		let future = self
+			.prev
+			.take()
+			.unwrap()
+			.then_execute(self.base.queue.clone(), command_buffer)
+			.unwrap()
+			.then_signal_fence_and_flush();
+		self.prev = Some(future.unwrap().boxed());
 	}
 
 	pub fn remove_tex(&mut self, outer: u32) {
@@ -92,7 +111,7 @@ impl Renderer {
 	}
 
 	pub fn render2(&mut self) {
-		let [w, h]: [u32; 2] = self.base.surface.window().inner_size().into();
+		let [w, h]: [u32; 2] = self.get_window().inner_size().into();
 		let [w, h] = [w as f32, h as f32];
 		let camera = M4::new_orthographic(0., w, 0., h, 1.0, -1.0);
 		self.render(camera);
@@ -115,15 +134,16 @@ impl Renderer {
 			}
 			Err(e) => panic!("{:?}", e),
 		};
+		
 		let mut builder = AutoCommandBufferBuilder::primary(
-			self.base.device.clone(),
+			&self.base.comalloc,
 			self.base.queue.queue_family_index(),
 			CommandBufferUsage::OneTimeSubmit,
 		)
 		.unwrap();
 		self.rmod.build_command(
 			&mut builder,
-			image_num,
+			image_num as usize,
 			Camera {
 				data: camera.into(),
 			},
@@ -140,10 +160,10 @@ impl Renderer {
 			.unwrap()
 			.then_swapchain_present(
 				self.base.queue.clone(),
-				PresentInfo {
-					index: image_num,
-					..PresentInfo::swapchain(self.base.swapchain.clone())
-				},
+				SwapchainPresentInfo::swapchain_image_index(
+					self.base.swapchain.clone(),
+					image_num
+				),
 			)
 			.then_signal_fence_and_flush();
 		match future {
@@ -164,7 +184,7 @@ impl Renderer {
 	fn create_swapchain(&mut self) {
 		eprintln!("Recreate swapchain");
 		let dimensions: [u32; 2] =
-			self.base.surface.window().inner_size().into();
+			self.get_window().inner_size().into();
 		let swapchain = self.base.swapchain.clone();
 		let (new_swapchain, new_images) =
 			match swapchain.recreate(SwapchainCreateInfo {

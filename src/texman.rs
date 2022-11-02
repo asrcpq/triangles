@@ -25,42 +25,33 @@ pub struct Texman {
 
 impl Texman {
 	// removed when TexHandle dropped
-	pub fn upload(&mut self, image: Teximg, id: u32, queue: VkwQueue) {
+	pub fn upload(&mut self, image: Teximg, id: u32, memalloc: VkwMemAlloc, builder: &mut VkwCommandBuilder) {
 		if let Some(id_inner) = self.mapper.get(&id) {
 			self.remove_list.push(*id_inner);
 		}
-		let (texture, future) = {
-			let dimensions = ImageDimensions::Dim2d {
-				width: image.dim[0],
-				height: image.dim[1],
-				array_layers: 1,
-			};
-			let format = Format::R8G8B8A8_SRGB;
-			let (image, future) = ImmutableImage::from_iter(
-				image.data.into_iter(),
-				dimensions,
-				MipmapsCount::One,
-				format,
-				queue,
-			)
-			.unwrap();
-			let image_view = ImageView::new(
-				image.clone(),
-				ImageViewCreateInfo {
-					view_type: ImageViewType::Dim2d,
-					..ImageViewCreateInfo::from_image(&image)
-				},
-			)
-			.unwrap();
-			(image_view, future)
+		let dimensions = ImageDimensions::Dim2d {
+			width: image.dim[0],
+			height: image.dim[1],
+			array_layers: 1,
 		};
-		if let Some(f) = self.future.take() {
-			self.future = Some(Box::new(f.join(future)));
-		} else {
-			self.future = Some(Box::new(future));
-		}
+		let format = Format::R8G8B8A8_SRGB;
+		let image = ImmutableImage::from_iter(
+			&memalloc,
+			image.data.into_iter(),
+			dimensions,
+			MipmapsCount::One,
+			format,
+			builder,
+		).unwrap();
+		let image_view = ImageView::new(
+			image.clone(),
+			ImageViewCreateInfo {
+				view_type: ImageViewType::Dim2d,
+				..ImageViewCreateInfo::from_image(&image)
+			},
+		).unwrap();
 		self.mapper.insert(id, self.image_views.len());
-		self.image_views.push(texture);
+		self.image_views.push(image_view);
 		self.dirty = true;
 	}
 
@@ -100,6 +91,7 @@ impl Texman {
 	pub fn compile_set(
 		&mut self,
 		device: VkwDevice,
+		dstalloc: VkwDstAlloc,
 		layout: VkwTexLayout,
 	) -> Option<VkwTextureSet> {
 		if let Some(future) = self.future.take() {
@@ -124,6 +116,7 @@ impl Texman {
 
 		Some(
 			PersistentDescriptorSet::new_variable(
+				&dstalloc,
 				layout.clone(),
 				iter.len() as u32,
 				[WriteDescriptorSet::image_view_sampler_array(0, 0, iter)],

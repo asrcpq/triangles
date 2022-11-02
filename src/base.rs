@@ -1,9 +1,13 @@
+use std::sync::Arc;
+use vulkano::command_buffer::allocator::StandardCommandBufferAllocator;
+use vulkano::descriptor_set::allocator::StandardDescriptorSetAllocator;
 use vulkano::device::physical::PhysicalDeviceType;
 use vulkano::device::{
 	Device, DeviceCreateInfo, DeviceExtensions, Features, QueueCreateInfo,
 };
 use vulkano::image::ImageUsage;
 use vulkano::instance::{Instance, InstanceCreateInfo, InstanceExtensions};
+use vulkano::memory::allocator::StandardMemoryAllocator;
 use vulkano::swapchain::{Swapchain, SwapchainCreateInfo};
 use vulkano::VulkanLibrary;
 use vulkano_win::VkSurfaceBuild;
@@ -18,9 +22,12 @@ pub struct Base {
 	pub instance: VkwInstance,
 	pub device: VkwDevice,
 	pub queue: VkwQueue,
-	pub surface: VkwSurface<Window>,
-	pub swapchain: VkwSwapchain<Window>,
+	pub surface: VkwSurface,
+	pub swapchain: VkwSwapchain,
 	pub images: VkwImages,
+	pub memalloc: VkwMemAlloc,
+	pub dstalloc: VkwDstAlloc,
+	pub comalloc: VkwComAlloc,
 }
 
 fn winit_size(size: [u32; 2]) -> Size {
@@ -60,6 +67,7 @@ impl Base {
 			device.clone(),
 			surface.clone(),
 		);
+		let (memalloc, dstalloc, comalloc) = get_allocators(device.clone());
 		Self {
 			instance,
 			device,
@@ -67,13 +75,26 @@ impl Base {
 			surface,
 			swapchain,
 			images,
+			memalloc,
+			dstalloc,
+			comalloc,
 		}
 	}
 }
 
-pub fn get_device_and_queue<W>(
+pub fn get_allocators(device: VkwDevice) -> (VkwMemAlloc, VkwDstAlloc, VkwComAlloc) {
+	let memalloc = StandardMemoryAllocator::new_default(device.clone());
+	let dstalloc = StandardDescriptorSetAllocator::new(device.clone());
+	let comalloc = StandardCommandBufferAllocator::new(
+		device.clone(),
+		Default::default(),
+	);
+	(Arc::new(memalloc), Arc::new(dstalloc), Arc::new(comalloc))
+}
+
+pub fn get_device_and_queue(
 	instance: &VkwInstance,
-	surface: VkwSurface<W>,
+	surface: VkwSurface,
 ) -> (VkwPhysicalDevice, VkwDevice, VkwQueue) {
 	let device_extensions = DeviceExtensions {
 		khr_swapchain: true,
@@ -142,8 +163,8 @@ pub fn get_device_and_queue<W>(
 pub fn get_swapchain_and_images(
 	physical_device: VkwPhysicalDevice,
 	device: VkwDevice,
-	surface: VkwSurface<Window>,
-) -> (VkwSwapchain<Window>, VkwImages) {
+	surface: VkwSurface,
+) -> (VkwSwapchain, VkwImages) {
 	let caps = physical_device
 		.surface_capabilities(&surface, Default::default())
 		.unwrap();
@@ -153,7 +174,8 @@ pub fn get_swapchain_and_images(
 		.unwrap()[0]
 		.0;
 	let format = Some(format);
-	let dimensions: [u32; 2] = surface.window().inner_size().into();
+	let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
+	let dimensions: [u32; 2] = window.inner_size().into();
 
 	Swapchain::new(
 		device,

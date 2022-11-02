@@ -44,13 +44,14 @@ impl Rmod {
 			get_pipeline_tex(renderpass_tex.clone(), device.clone(), 0);
 		let framebuffers_tex =
 			window_size_dependent_setup(renderpass_tex.clone(), &base.images);
+		let memalloc = base.memalloc.clone();
 		Self {
 			base,
 			framebuffers_tex,
 			pipeline_tex,
 			renderpass_tex,
 			texman: Default::default(),
-			modelman: Modelman::new(device),
+			modelman: Modelman::new(memalloc),
 			texset: None,
 		}
 	}
@@ -63,7 +64,7 @@ impl Rmod {
 		viewport: Viewport,
 	) {
 		let uniform_buffer = CpuAccessibleBuffer::from_data(
-			self.base.device.clone(),
+			&self.base.memalloc,
 			BufferUsage {
 				uniform_buffer: true,
 				..BufferUsage::empty()
@@ -75,6 +76,7 @@ impl Rmod {
 
 		let layout = self.pipeline_tex.layout().set_layouts().get(0).unwrap();
 		let set = PersistentDescriptorSet::new(
+			&self.base.dstalloc,
 			layout.clone(),
 			[WriteDescriptorSet::buffer(0, uniform_buffer)],
 		)
@@ -92,7 +94,11 @@ impl Rmod {
 				self.pipeline_tex.layout().set_layouts().get(1).unwrap();
 			let texset = self
 				.texman
-				.compile_set(self.base.device.clone(), layout.clone());
+				.compile_set(
+					self.base.device.clone(),
+					self.base.dstalloc.clone(),
+					layout.clone()
+				);
 			self.texset = texset;
 		}
 		let texset = self.texset.clone().unwrap();
@@ -130,9 +136,9 @@ impl Rmod {
 	}
 }
 
-pub fn get_render_pass_clear<W>(
+pub fn get_render_pass_clear(
 	device: VkwDevice,
-	swapchain: VkwSwapchain<W>,
+	swapchain: VkwSwapchain,
 ) -> VkwRenderPass {
 	vulkano::single_pass_renderpass!(
 		device,

@@ -1,9 +1,8 @@
 # change:
-- add model manager, the vertex won't be recompiled every time
+- upgrade vulkano
 
 # next:
 - depth
-- multiwindow
 
 # future:
 - reuse command buffer
