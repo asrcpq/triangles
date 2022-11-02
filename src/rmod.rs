@@ -5,7 +5,10 @@ use vulkano::descriptor_set::layout::{
 	DescriptorSetLayoutCreationError, DescriptorType,
 };
 use vulkano::descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet};
+use vulkano::format::Format;
+use vulkano::image::{AttachmentImage, ImageAccess};
 use vulkano::image::view::ImageView;
+use vulkano::pipeline::graphics::depth_stencil::DepthStencilState;
 use vulkano::pipeline::graphics::input_assembly::{
 	InputAssemblyState, PrimitiveTopology,
 };
@@ -42,8 +45,11 @@ impl Rmod {
 			get_render_pass_clear(device.clone(), base.swapchain.clone());
 		let pipeline_tex =
 			get_pipeline_tex(renderpass_tex.clone(), device.clone(), 0);
-		let framebuffers_tex =
-			window_size_dependent_setup(renderpass_tex.clone(), &base.images);
+		let framebuffers_tex = window_size_dependent_setup(
+			renderpass_tex.clone(),
+			&base.images,
+			base.memalloc.clone(),
+		);
 		let memalloc = base.memalloc.clone();
 		Self {
 			base,
@@ -102,7 +108,7 @@ impl Rmod {
 			self.texset = texset;
 		}
 		let texset = self.texset.clone().unwrap();
-		let clear_values = vec![Some([0.0; 4].into())];
+		let clear_values = vec![Some([0.0; 4].into()), Some(1f32.into())];
 		builder
 			.begin_render_pass(
 				RenderPassBeginInfo {
@@ -132,7 +138,11 @@ impl Rmod {
 
 	pub fn update_framebuffers(&mut self, images: &VkwImages) {
 		self.framebuffers_tex =
-			window_size_dependent_setup(self.renderpass_tex.clone(), images);
+			window_size_dependent_setup(
+				self.renderpass_tex.clone(),
+				images,
+				self.base.memalloc.clone(),
+			);
 	}
 }
 
@@ -148,11 +158,17 @@ pub fn get_render_pass_clear(
 				store: Store,
 				format: swapchain.image_format(),
 				samples: 1,
+			},
+			depth: {
+				load: Clear,
+				store: Store,
+				format: Format::D16_UNORM,
+				samples: 1,
 			}
 		},
 		pass: {
 			color: [color],
-			depth_stencil: {}
+			depth_stencil: {depth}
 		}
 	)
 	.unwrap()
@@ -201,6 +217,7 @@ pub fn get_pipeline_tex(
 		)
 		.viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
 		.fragment_shader(fs.entry_point("main").unwrap(), ())
+		.depth_stencil_state(DepthStencilState::simple_depth_test())
 		.render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
 		.with_pipeline_layout(device.clone(), pipeline_layout)
 		.unwrap();
@@ -210,7 +227,13 @@ pub fn get_pipeline_tex(
 pub fn window_size_dependent_setup(
 	render_pass: VkwRenderPass,
 	images: &VkwImages,
+	memalloc: VkwMemAlloc,
 ) -> Vec<VkwFramebuffer> {
+	let dimensions = images[0].dimensions().width_height();
+	let depth_buffer = ImageView::new_default(
+		AttachmentImage::transient(&memalloc, dimensions, Format::D16_UNORM).unwrap(),
+	).unwrap();
+
 	images
 		.iter()
 		.map(|image| {
@@ -218,7 +241,7 @@ pub fn window_size_dependent_setup(
 			Framebuffer::new(
 				render_pass.clone(),
 				FramebufferCreateInfo {
-					attachments: vec![view],
+					attachments: vec![view, depth_buffer.clone()],
 					..Default::default()
 				},
 			)
