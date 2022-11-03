@@ -1,10 +1,10 @@
-use winit::event::{Event, WindowEvent, ElementState};
+use winit::event::{ElementState, Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 
 use triangles::model::Model;
 use triangles::model::TexFace;
-use triangles::teximg::Teximg;
 use triangles::renderer::Renderer;
+use triangles::teximg::Teximg;
 
 fn bitw_loader(path: &str) -> (Teximg, [usize; 2]) {
 	let string = std::fs::read_to_string(path).unwrap();
@@ -17,10 +17,9 @@ fn bitw_loader(path: &str) -> (Teximg, [usize; 2]) {
 		let line = line.trim_end();
 		if line.is_empty() {
 			if tmp_num == -1 {
-				continue
+				continue;
 			}
 			// check row/col
-			assert!(tmp_data.len() > 0);
 			if row == 0 {
 				row = tmp_data.len();
 			} else {
@@ -48,20 +47,21 @@ fn bitw_loader(path: &str) -> (Teximg, [usize; 2]) {
 
 			tmp_num = -1;
 			tmp_data = Vec::new();
-			continue
+			continue;
 		}
 		if tmp_num == -1 {
 			tmp_num = line.parse::<i32>().unwrap();
-			continue
+			continue;
 		}
 		let bools = line.chars().map(|x| x == '1').collect();
 		tmp_data.push(bools);
 	}
 	let result = Teximg {
 		dim: [1024, 1024],
-		data: data.into_iter().flat_map(|x|
-			x.into_iter().flat_map(|x| x.into_iter())
-		).collect(),
+		data: data
+			.into_iter()
+			.flat_map(|x| x.into_iter().flat_map(|x| x.into_iter()))
+			.collect(),
 	};
 	(result, [col, row])
 }
@@ -119,11 +119,7 @@ fn main() {
 		}
 	}
 	let tex_faces = text2fs("hello,world", 6, texture_char_per_row, 0);
-	let model = Model {
-		vs,
-		uvs,
-		tex_faces,
-	};
+	let model = Model { vs, uvs, tex_faces };
 	rdr.insert_model(0, &model);
 	rdr.set_z(0, 1);
 	let model = Model {
@@ -133,14 +129,12 @@ fn main() {
 			[100.0, 30.0, 0.0, 1.0],
 		],
 		uvs: vec![[0.0; 2]],
-		tex_faces: vec![
-			TexFace {
-				vid: [0, 1, 2],
-				color: [0.0, 0.0, 1.0, 1.0],
-				layer: -1,
-				uvid: [0; 3],
-			}
-		],
+		tex_faces: vec![TexFace {
+			vid: [0, 1, 2],
+			color: [0.0, 0.0, 1.0, 1.0],
+			layer: -1,
+			uvid: [0; 3],
+		}],
 	};
 	rdr.insert_model(1, &model);
 	el.run(move |event, _, ctrl| match event {
@@ -151,10 +145,7 @@ fn main() {
 			WindowEvent::Resized(_) => {
 				rdr.damage();
 			}
-			WindowEvent::KeyboardInput { 
-				input,
-				..
-			} => {
+			WindowEvent::KeyboardInput { input, .. } => {
 				if input.state == ElementState::Pressed {
 					// rdr.insert_model(0, &model);
 					rdr.redraw();

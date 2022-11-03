@@ -1,10 +1,10 @@
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
 
-use crate::vertex::VertexTex;
 use crate::helper::*;
 use crate::model::Model;
+use crate::vertex::VertexTex;
 
 struct CompiledModel {
 	pub visible: bool,
@@ -30,7 +30,8 @@ impl Modelman {
 					..BufferUsage::empty()
 				},
 				true,
-			).unwrap()
+			)
+			.unwrap()
 		};
 		Self {
 			buffer,
@@ -69,17 +70,20 @@ impl Modelman {
 			})
 			.collect::<Vec<_>>();
 		assert!(!vertices.is_empty()); // TODO: allow empty model
-		self.models.insert(id, CompiledModel {
-			visible: true,
-			z: 0,
-			vertices,
-		});
+		self.models.insert(
+			id,
+			CompiledModel {
+				visible: true,
+				z: 0,
+				vertices,
+			},
+		);
 	}
 
 	pub fn map_tex(&mut self, mapper: HashMap<i32, i32>) {
 		for model in self.models.values_mut() {
 			for v in model.vertices.iter_mut() {
-				let ref mut l = v.tex_layer;
+				let l = &mut v.tex_layer;
 				if *l >= 0 {
 					*l = *mapper.get(l).unwrap();
 				}
@@ -100,7 +104,8 @@ impl Modelman {
 	}
 
 	pub fn write_buffer(&mut self) -> Option<usize> {
-		let mut buffers: Vec<&CompiledModel> = self.models.values().filter(|x| x.visible).collect();
+		let mut buffers: Vec<&CompiledModel> =
+			self.models.values().filter(|x| x.visible).collect();
 		buffers.sort_by_key(|x| x.z);
 		let len = buffers.iter().map(|x| x.vertices.len()).sum();
 
@@ -111,7 +116,10 @@ impl Modelman {
 			eprintln!("ERROR: Gpu locked");
 			return None;
 		};
-		for (v, w) in writer.iter_mut().zip(buffers.iter().flat_map(|x| &x.vertices)) {
+		for (v, w) in writer
+			.iter_mut()
+			.zip(buffers.iter().flat_map(|x| &x.vertices))
+		{
 			*v = *w;
 		}
 		Some(len)

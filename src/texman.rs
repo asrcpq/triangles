@@ -22,7 +22,11 @@ pub struct Texman {
 	dirty: bool,
 }
 
-fn create_image_view(image: Teximg, memalloc: VkwMemAlloc, builder: &mut VkwCommandBuilder) -> VkwImageView {
+fn create_image_view(
+	image: Teximg,
+	memalloc: VkwMemAlloc,
+	builder: &mut VkwCommandBuilder,
+) -> VkwImageView {
 	let dimensions = ImageDimensions::Dim2d {
 		width: image.dim[0],
 		height: image.dim[1],
@@ -36,14 +40,16 @@ fn create_image_view(image: Teximg, memalloc: VkwMemAlloc, builder: &mut VkwComm
 		MipmapsCount::One,
 		format,
 		builder,
-	).unwrap();
+	)
+	.unwrap();
 	ImageView::new(
 		image.clone(),
 		ImageViewCreateInfo {
 			view_type: ImageViewType::Dim2d,
 			..ImageViewCreateInfo::from_image(&image)
 		},
-	).unwrap()
+	)
+	.unwrap()
 }
 
 impl Texman {
@@ -113,11 +119,9 @@ impl Texman {
 			.iter()
 			.cloned()
 			.map(|view| {
-				let sampler = Sampler::new(
-					device.clone(),
-					SamplerCreateInfo::default(),
-				)
-				.unwrap();
+				let sampler =
+					Sampler::new(device.clone(), SamplerCreateInfo::default())
+						.unwrap();
 				(view as _, sampler)
 			})
 			.collect();
@@ -128,7 +132,7 @@ impl Texman {
 		Some(
 			PersistentDescriptorSet::new_variable(
 				&dstalloc,
-				layout.clone(),
+				layout,
 				iter.len() as u32,
 				[WriteDescriptorSet::image_view_sampler_array(0, 0, iter)],
 			)

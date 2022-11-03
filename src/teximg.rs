@@ -20,7 +20,8 @@ impl Teximg {
 	pub fn filled(dim: [u32; 2], value: [u8; 4]) -> Self {
 		Self {
 			dim,
-			data: value.into_iter()
+			data: value
+				.into_iter()
 				.cycle()
 				.take((4 * dim[0] * dim[1]) as usize)
 				.collect(),
@@ -40,11 +41,16 @@ impl Teximg {
 	}
 
 	pub fn open(path: &str) -> Self {
-		Self::from_image_buffer(image::open(path).unwrap().as_rgba8().unwrap().clone())
+		Self::from_image_buffer(
+			image::open(path).unwrap().as_rgba8().unwrap().clone(),
+		)
 	}
 
 	pub fn save(&self, path: &str) {
-		TexImage::from_vec(self.dim[0], self.dim[1], self.data.clone()).unwrap().save(path).unwrap();
+		TexImage::from_vec(self.dim[0], self.dim[1], self.data.clone())
+			.unwrap()
+			.save(path)
+			.unwrap();
 	}
 }
 

@@ -1,18 +1,16 @@
 use std::sync::Arc;
 use vulkano::command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage};
 use vulkano::image::ImageAccess;
+use vulkano::instance::debug::{
+	DebugUtilsMessageSeverity, DebugUtilsMessageType, DebugUtilsMessenger,
+	DebugUtilsMessengerCreateInfo,
+};
 use vulkano::pipeline::graphics::viewport::Viewport;
 use vulkano::swapchain::SwapchainPresentInfo;
 use vulkano::swapchain::{
 	self, AcquireError, SwapchainCreateInfo, SwapchainCreationError,
 };
 use vulkano::sync::{self, GpuFuture};
-use vulkano::instance::debug::{
-	DebugUtilsMessengerCreateInfo,
-	DebugUtilsMessageType,
-	DebugUtilsMessenger,
-	DebugUtilsMessageSeverity,
-};
 use winit::event_loop::EventLoopWindowTarget;
 use winit::window::Window;
 
@@ -35,7 +33,8 @@ pub struct Renderer {
 impl Renderer {
 	pub fn new<E>(el: &EventLoopWindowTarget<E>) -> Self {
 		let base = Base::new(el);
-		let _debug_callback = unsafe { get_debug_callback(base.instance.clone()) };
+		let _debug_callback =
+			unsafe { get_debug_callback(base.instance.clone()) };
 		let rmod = Rmod::new(base.clone());
 		let viewport = Viewport {
 			origin: [0.0, 0.0],
@@ -55,7 +54,12 @@ impl Renderer {
 	}
 
 	fn get_window(&self) -> &Window {
-		self.base.surface.object().unwrap().downcast_ref::<Window>().unwrap()
+		self.base
+			.surface
+			.object()
+			.unwrap()
+			.downcast_ref::<Window>()
+			.unwrap()
 	}
 
 	pub fn get_size(&self) -> [u32; 2] {
@@ -71,8 +75,14 @@ impl Renderer {
 			&self.base.comalloc,
 			self.base.queue.queue_family_index(),
 			CommandBufferUsage::OneTimeSubmit,
-		).unwrap();
-		self.rmod.texman.upload(image, id, self.base.memalloc.clone(), &mut builder);
+		)
+		.unwrap();
+		self.rmod.texman.upload(
+			image,
+			id,
+			self.base.memalloc.clone(),
+			&mut builder,
+		);
 		let command_buffer = Box::new(builder.build().unwrap());
 		sync::now(self.base.device.clone())
 			.then_execute(self.base.queue.clone(), command_buffer)
@@ -88,7 +98,9 @@ impl Renderer {
 	}
 
 	pub fn insert_model(&mut self, id: u32, model: &Model) {
-		self.rmod.modelman.insert(id, model, &self.rmod.texman.mapper)
+		self.rmod
+			.modelman
+			.insert(id, model, &self.rmod.texman.mapper)
 	}
 
 	pub fn set_z(&mut self, id: u32, z: u32) {
@@ -130,7 +142,7 @@ impl Renderer {
 			}
 			Err(e) => panic!("{:?}", e),
 		};
-		
+
 		let mut builder = AutoCommandBufferBuilder::primary(
 			&self.base.comalloc,
 			self.base.queue.queue_family_index(),
@@ -155,7 +167,7 @@ impl Renderer {
 				self.base.queue.clone(),
 				SwapchainPresentInfo::swapchain_image_index(
 					self.base.swapchain.clone(),
-					image_num
+					image_num,
 				),
 			)
 			.then_signal_fence_and_flush()
@@ -165,8 +177,7 @@ impl Renderer {
 
 	fn create_swapchain(&mut self) {
 		eprintln!("Recreate swapchain");
-		let dimensions: [u32; 2] =
-			self.get_window().inner_size().into();
+		let dimensions: [u32; 2] = self.get_window().inner_size().into();
 		let swapchain = self.base.swapchain.clone();
 		let (new_swapchain, new_images) =
 			match swapchain.recreate(SwapchainCreateInfo {
@@ -195,7 +206,7 @@ impl Renderer {
 
 unsafe fn get_debug_callback(instance: VkwInstance) -> DebugUtilsMessenger {
 	DebugUtilsMessenger::new(
-		instance.clone(),
+		instance,
 		DebugUtilsMessengerCreateInfo {
 			message_severity: DebugUtilsMessageSeverity {
 				error: true,
@@ -242,5 +253,6 @@ unsafe fn get_debug_callback(instance: VkwInstance) -> DebugUtilsMessenger {
 				);
 			}))
 		},
-	).unwrap()
+	)
+	.unwrap()
 }

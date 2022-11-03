@@ -1,4 +1,4 @@
-simply sync everywhere
+clippy fmt
 
 todo:
 - partial update(damage)

@@ -2,11 +2,11 @@ mod base;
 mod camera;
 mod helper;
 pub mod model;
+mod modelman;
 pub mod renderer;
 mod rmod;
 mod shader;
 pub mod teximg;
-mod modelman;
 mod texman;
 mod vertex;
 

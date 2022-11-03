@@ -1,10 +1,10 @@
 use std::sync::Arc;
+use vulkano::command_buffer::allocator::StandardCommandBufferAllocator;
 use vulkano::command_buffer::{
 	AutoCommandBufferBuilder, PrimaryAutoCommandBuffer,
 };
-use vulkano::command_buffer::allocator::StandardCommandBufferAllocator;
-use vulkano::descriptor_set::layout::DescriptorSetLayout;
 use vulkano::descriptor_set::allocator::StandardDescriptorSetAllocator;
+use vulkano::descriptor_set::layout::DescriptorSetLayout;
 use vulkano::descriptor_set::PersistentDescriptorSet;
 use vulkano::device::physical::PhysicalDevice;
 use vulkano::device::{Device, Queue};

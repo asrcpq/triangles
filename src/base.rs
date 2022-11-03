@@ -82,13 +82,13 @@ impl Base {
 	}
 }
 
-pub fn get_allocators(device: VkwDevice) -> (VkwMemAlloc, VkwDstAlloc, VkwComAlloc) {
+pub fn get_allocators(
+	device: VkwDevice,
+) -> (VkwMemAlloc, VkwDstAlloc, VkwComAlloc) {
 	let memalloc = StandardMemoryAllocator::new_default(device.clone());
 	let dstalloc = StandardDescriptorSetAllocator::new(device.clone());
-	let comalloc = StandardCommandBufferAllocator::new(
-		device.clone(),
-		Default::default(),
-	);
+	let comalloc =
+		StandardCommandBufferAllocator::new(device, Default::default());
 	(Arc::new(memalloc), Arc::new(dstalloc), Arc::new(comalloc))
 }
 

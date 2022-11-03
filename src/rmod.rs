@@ -6,8 +6,8 @@ use vulkano::descriptor_set::layout::{
 };
 use vulkano::descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet};
 use vulkano::format::Format;
-use vulkano::image::{AttachmentImage, ImageAccess};
 use vulkano::image::view::ImageView;
+use vulkano::image::{AttachmentImage, ImageAccess};
 use vulkano::pipeline::graphics::color_blend::ColorBlendState;
 use vulkano::pipeline::graphics::depth_stencil::DepthStencilState;
 use vulkano::pipeline::graphics::input_assembly::{
@@ -24,8 +24,8 @@ use vulkano::render_pass::{Framebuffer, FramebufferCreateInfo, Subpass};
 use crate::base::Base;
 use crate::camera::Camera;
 use crate::helper::*;
-use crate::shader;
 use crate::modelman::Modelman;
+use crate::shader;
 use crate::texman::Texman;
 use crate::vertex::VertexTex;
 
@@ -44,8 +44,7 @@ impl Rmod {
 		let device = base.device.clone();
 		let renderpass_tex =
 			get_render_pass_clear(device.clone(), base.swapchain.clone());
-		let pipeline_tex =
-			get_pipeline_tex(renderpass_tex.clone(), device.clone(), 0);
+		let pipeline_tex = get_pipeline_tex(renderpass_tex.clone(), device, 0);
 		let framebuffers_tex = window_size_dependent_setup(
 			renderpass_tex.clone(),
 			&base.images,
@@ -80,13 +79,11 @@ impl Rmod {
 			);
 			let layout =
 				self.pipeline_tex.layout().set_layouts().get(1).unwrap();
-			let texset = self
-				.texman
-				.compile_set(
-					self.base.device.clone(),
-					self.base.dstalloc.clone(),
-					layout.clone()
-				);
+			let texset = self.texman.compile_set(
+				self.base.device.clone(),
+				self.base.dstalloc.clone(),
+				layout.clone(),
+			);
 			self.texset = texset;
 		}
 		// dirty workaround for gpulock
@@ -144,12 +141,11 @@ impl Rmod {
 	}
 
 	pub fn update_framebuffers(&mut self, images: &VkwImages) {
-		self.framebuffers_tex =
-			window_size_dependent_setup(
-				self.renderpass_tex.clone(),
-				images,
-				self.base.memalloc.clone(),
-			);
+		self.framebuffers_tex = window_size_dependent_setup(
+			self.renderpass_tex.clone(),
+			images,
+			self.base.memalloc.clone(),
+		);
 	}
 }
 
@@ -216,7 +212,7 @@ pub fn get_pipeline_tex(
 	)
 	.unwrap();
 
-	let subpass = Subpass::from(render_pass.clone(), 0).unwrap();
+	let subpass = Subpass::from(render_pass, 0).unwrap();
 	let pipeline = GraphicsPipeline::start()
 		.vertex_input_state(BuffersDefinition::new().vertex::<VertexTex>())
 		.vertex_shader(vs.entry_point("main").unwrap(), ())
@@ -226,9 +222,11 @@ pub fn get_pipeline_tex(
 		.viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
 		.fragment_shader(fs.entry_point("main").unwrap(), ())
 		.depth_stencil_state(DepthStencilState::simple_depth_test())
-		.color_blend_state(ColorBlendState::new(subpass.num_color_attachments()).blend_alpha())
+		.color_blend_state(
+			ColorBlendState::new(subpass.num_color_attachments()).blend_alpha(),
+		)
 		.render_pass(subpass)
-		.with_pipeline_layout(device.clone(), pipeline_layout)
+		.with_pipeline_layout(device, pipeline_layout)
 		.unwrap();
 	pipeline
 }
@@ -240,8 +238,10 @@ pub fn window_size_dependent_setup(
 ) -> Vec<VkwFramebuffer> {
 	let dimensions = images[0].dimensions().width_height();
 	let depth_buffer = ImageView::new_default(
-		AttachmentImage::transient(&memalloc, dimensions, Format::D16_UNORM).unwrap(),
-	).unwrap();
+		AttachmentImage::transient(&memalloc, dimensions, Format::D16_UNORM)
+			.unwrap(),
+	)
+	.unwrap();
 
 	images
 		.iter()
