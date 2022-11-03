@@ -7,7 +7,8 @@ pub struct Model {
 
 #[derive(Clone)]
 pub struct TexFace {
+	pub color: [f32; 4],
 	pub vid: [usize; 3],
 	pub uvid: [usize; 3],
-	pub layer: u32,
+	pub layer: i32,
 }

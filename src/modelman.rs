@@ -8,7 +8,7 @@ use crate::model::Model;
 
 struct CompiledModel {
 	pub visible: bool,
-	pub z: i32,
+	pub z: u32,
 	pub vertices: Vec<VertexTex>,
 }
 
@@ -42,16 +42,29 @@ impl Modelman {
 		&mut self,
 		id: u32,
 		model: &Model,
-		mapper: &HashMap<u32, usize>,
+		mapper: &HashMap<i32, i32>,
 	) {
 		let vertices = model
 			.tex_faces
 			.iter()
 			.flat_map(|face| {
-				(0..3).map(|i| VertexTex {
-					pos: model.vs[face.vid[i]],
-					tex_coord: model.uvs[face.uvid[i]],
-					tex_layer: *mapper.get(&face.layer).unwrap() as i32,
+				(0..3).map(|i| {
+					let tex_coord = if face.layer < 0 {
+						[0.0; 2]
+					} else {
+						model.uvs[face.uvid[i]]
+					};
+					let tex_layer = if face.layer < 0 {
+						face.layer
+					} else {
+						*mapper.get(&face.layer).unwrap()
+					};
+					VertexTex {
+						pos: model.vs[face.vid[i]],
+						color: face.color,
+						tex_coord,
+						tex_layer,
+					}
 				})
 			})
 			.collect::<Vec<_>>();
@@ -63,7 +76,7 @@ impl Modelman {
 		});
 	}
 
-	pub fn set_z(&mut self, id: u32, z: i32) {
+	pub fn set_z(&mut self, id: u32, z: u32) {
 		self.models.get_mut(&id).unwrap().z = z;
 	}
 

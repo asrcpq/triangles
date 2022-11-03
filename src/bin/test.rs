@@ -6,23 +6,6 @@ use triangles::model::TexFace;
 use triangles::renderer::Renderer;
 use triangles::teximg::Teximg;
 
-fn color(name: char) -> [u8; 3] {
-	match name {
-		'r' => [255, 0, 0],
-		'g' => [0, 255, 0],
-		'b' => [0, 0, 255],
-		'w' => [255, 255, 255],
-		c => panic!("{}", c),
-	}
-}
-
-fn rgb_to_16uv(rgb: [u8; 3]) -> [f32; 2] {
-	let xr = (rgb[0] / 8) as f32 / 32.0;
-	let xb = rgb[2] as f32 / 256.0 / 32.0;
-	let xg = rgb[1] as f32 / 4.0;
-	[xr + xb, xg]
-}
-
 fn main() {
 	let el = EventLoop::new();
 	let mut rdr = Renderer::new(&el);
@@ -38,22 +21,16 @@ fn main() {
 		[000., 200., 0.0, 1.0],
 	];
 	let mut phase = 0u32;
-	let uvs = vec![
-		rgb_to_16uv(color('r')),
-		rgb_to_16uv(color('g')),
-		rgb_to_16uv(color('b')),
-		rgb_to_16uv(color('w')),
-	];
 	let fs = vec![
-		TexFace { vid: [0, 7, 2], layer: 0, uvid: [0; 3] },
-		TexFace { vid: [2, 1, 4], layer: 0, uvid: [1; 3] },
-		TexFace { vid: [4, 3, 6], layer: 0, uvid: [2; 3] },
-		TexFace { vid: [6, 5, 0], layer: 0, uvid: [3; 3] },
+		TexFace { vid: [0, 7, 2], color: [1.0, 0.0, 0.0, 1.0], layer: -1, uvid: [0; 3] },
+		TexFace { vid: [2, 1, 4], color: [0.0, 1.0, 0.0, 1.0], layer: -1, uvid: [0; 3] },
+		TexFace { vid: [4, 3, 6], color: [0.0, 0.0, 1.0, 1.0], layer: -1, uvid: [0; 3] },
+		TexFace { vid: [6, 5, 0], color: [1.0, 0.0, 1.0, 1.0], layer: -1, uvid: [0; 3] },
 	];
 	for (idx, face) in fs.into_iter().enumerate() {
 		let model = Model {
 			vs: vs.clone(),
-			uvs: uvs.clone(),
+			uvs: vec![],
 			tex_faces: vec![face],
 		};
 		rdr.insert_model(idx as u32, &model);

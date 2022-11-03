@@ -11,12 +11,12 @@ use crate::teximg::Teximg;
 
 #[derive(Default)]
 pub struct Texman {
-	pub mapper: HashMap<u32, usize>,
+	pub mapper: HashMap<i32, i32>,
 
 	// pending remove_list record inner id only,
 	// when an inner get pushed, it must have already been deleted from mapper
 	// the removal is executed in compile_set
-	remove_list: Vec<usize>,
+	remove_list: Vec<i32>,
 
 	image_views: Vec<VkwImageView>,
 	future: Option<VkwFuture>,
@@ -25,7 +25,13 @@ pub struct Texman {
 
 impl Texman {
 	// removed when TexHandle dropped
-	pub fn upload(&mut self, image: Teximg, id: u32, memalloc: VkwMemAlloc, builder: &mut VkwCommandBuilder) {
+	pub fn upload(
+		&mut self,
+		image: Teximg,
+		id: i32,
+		memalloc: VkwMemAlloc,
+		builder: &mut VkwCommandBuilder,
+	) {
 		if let Some(id_inner) = self.mapper.get(&id) {
 			self.remove_list.push(*id_inner);
 		}
@@ -50,7 +56,7 @@ impl Texman {
 				..ImageViewCreateInfo::from_image(&image)
 			},
 		).unwrap();
-		self.mapper.insert(id, self.image_views.len());
+		self.mapper.insert(id, self.image_views.len() as i32);
 		self.image_views.push(image_view);
 		self.dirty = true;
 	}
@@ -60,7 +66,7 @@ impl Texman {
 		self.image_views.len()
 	}
 
-	pub fn remove(&mut self, outer: u32) {
+	pub fn remove(&mut self, outer: i32) {
 		let inner = self.mapper.remove(&outer).unwrap();
 		self.dirty = true;
 		self.remove_list.push(inner);
@@ -71,15 +77,15 @@ impl Texman {
 	}
 
 	fn gc(&mut self) {
-		let mut new_mapper = HashMap::new();
+		let mut new_mapper: HashMap<i32, i32> = HashMap::new();
 		let mut new_views = Vec::new();
 		for (outer, inner) in self.mapper.iter() {
 			eprintln!("{} -> {}", outer, inner);
 			if self.remove_list.iter().any(|x| x == inner) {
 				continue;
 			}
-			new_mapper.insert(*outer, new_views.len());
-			new_views.push(self.image_views[*inner].clone());
+			new_mapper.insert(*outer, new_views.len() as i32);
+			new_views.push(self.image_views[*inner as usize].clone());
 		}
 		self.remove_list.clear();
 		self.mapper = new_mapper;

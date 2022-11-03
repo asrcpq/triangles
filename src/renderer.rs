@@ -68,7 +68,7 @@ impl Renderer {
 		self.get_window().request_redraw();
 	}
 
-	pub fn upload_tex(&mut self, image: Teximg, id: u32) {
+	pub fn upload_tex(&mut self, image: Teximg, id: i32) {
 		let mut builder = AutoCommandBufferBuilder::primary(
 			&self.base.comalloc,
 			self.base.queue.queue_family_index(),
@@ -86,7 +86,7 @@ impl Renderer {
 		self.prev = Some(future.unwrap().boxed());
 	}
 
-	pub fn remove_tex(&mut self, outer: u32) {
+	pub fn remove_tex(&mut self, outer: i32) {
 		self.rmod.texman.remove(outer);
 	}
 
@@ -94,7 +94,7 @@ impl Renderer {
 		self.rmod.modelman.insert(id, model, &self.rmod.texman.mapper)
 	}
 
-	pub fn set_z(&mut self, id: u32, z: i32) {
+	pub fn set_z(&mut self, id: u32, z: u32) {
 		self.rmod.modelman.set_z(id, z);
 	}
 

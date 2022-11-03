@@ -29,3 +29,10 @@ impl Teximg {
 		Self::from_image_buffer(image)
 	}
 }
+
+pub fn rgb_to_16uv(rgb: [u8; 3]) -> [f32; 2] {
+	let xr = (rgb[0] / 8) as f32 / 32.0;
+	let xb = rgb[2] as f32 / 256.0 / 32.0;
+	let xg = rgb[1] as f32 / 4.0;
+	[xr + xb, xg]
+}

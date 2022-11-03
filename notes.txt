@@ -1,9 +1,10 @@
 # change:
-- depth
+- colorize
 
 # next:
-- multi window
+- text renderer example
 
 # future:
+- multi window
 - reuse command buffer
 - reuse data in vertex buffer
