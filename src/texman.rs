@@ -67,6 +67,7 @@ impl Texman {
 	}
 
 	pub fn remove(&mut self, outer: i32) {
+		assert!(outer >= 0);
 		let inner = self.mapper.remove(&outer).unwrap();
 		self.dirty = true;
 		self.remove_list.push(inner);

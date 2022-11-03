@@ -1,5 +1,5 @@
 # change:
-- renderer does not require texture size >= 1
+- check id before removal texture
 
 # next:
 - text renderer example

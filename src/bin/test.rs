@@ -51,7 +51,7 @@ fn main() {
 					rdr.redraw();
 				}
 			}
-			_ => {}
+			e => {eprintln!("{:?}", e)}
 		},
 		Event::RedrawRequested(_window_id) => {
 			eprintln!("redraw");
