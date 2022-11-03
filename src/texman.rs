@@ -4,7 +4,6 @@ use vulkano::format::Format;
 use vulkano::image::view::{ImageView, ImageViewCreateInfo, ImageViewType};
 use vulkano::image::{ImageDimensions, ImmutableImage, MipmapsCount};
 use vulkano::sampler::{Sampler, SamplerCreateInfo};
-use vulkano::sync::GpuFuture;
 
 use crate::helper::*;
 use crate::teximg::Teximg;
@@ -17,10 +16,34 @@ pub struct Texman {
 	// when an inner get pushed, it must have already been deleted from mapper
 	// the removal is executed in compile_set
 	remove_list: Vec<i32>,
+	id_alloc: i32,
 
 	image_views: Vec<VkwImageView>,
-	future: Option<VkwFuture>,
 	dirty: bool,
+}
+
+fn create_image_view(image: Teximg, memalloc: VkwMemAlloc, builder: &mut VkwCommandBuilder) -> VkwImageView {
+	let dimensions = ImageDimensions::Dim2d {
+		width: image.dim[0],
+		height: image.dim[1],
+		array_layers: 1,
+	};
+	let format = Format::R8G8B8A8_SRGB;
+	let image = ImmutableImage::from_iter(
+		&memalloc,
+		image.data.into_iter(),
+		dimensions,
+		MipmapsCount::One,
+		format,
+		builder,
+	).unwrap();
+	ImageView::new(
+		image.clone(),
+		ImageViewCreateInfo {
+			view_type: ImageViewType::Dim2d,
+			..ImageViewCreateInfo::from_image(&image)
+		},
+	).unwrap()
 }
 
 impl Texman {
@@ -35,35 +58,16 @@ impl Texman {
 		if let Some(id_inner) = self.mapper.get(&id) {
 			self.remove_list.push(*id_inner);
 		}
-		let dimensions = ImageDimensions::Dim2d {
-			width: image.dim[0],
-			height: image.dim[1],
-			array_layers: 1,
-		};
-		let format = Format::R8G8B8A8_SRGB;
-		let image = ImmutableImage::from_iter(
-			&memalloc,
-			image.data.into_iter(),
-			dimensions,
-			MipmapsCount::One,
-			format,
-			builder,
-		).unwrap();
-		let image_view = ImageView::new(
-			image.clone(),
-			ImageViewCreateInfo {
-				view_type: ImageViewType::Dim2d,
-				..ImageViewCreateInfo::from_image(&image)
-			},
-		).unwrap();
-		self.mapper.insert(id, self.image_views.len() as i32);
+		let image_view = create_image_view(image, memalloc, builder);
+		self.mapper.insert(id, self.id_alloc);
+		self.id_alloc += 1;
 		self.image_views.push(image_view);
 		self.dirty = true;
 	}
 
-	pub fn tex_len(&mut self) -> usize {
-		self.gc();
-		self.image_views.len()
+	pub fn tex_len(&mut self) -> (usize, HashMap<i32, i32>) {
+		let update_mapper = self.gc();
+		(self.image_views.len(), update_mapper)
 	}
 
 	pub fn remove(&mut self, outer: i32) {
@@ -77,14 +81,15 @@ impl Texman {
 		self.dirty
 	}
 
-	fn gc(&mut self) {
+	fn gc(&mut self) -> HashMap<i32, i32> {
 		let mut new_mapper: HashMap<i32, i32> = HashMap::new();
+		let mut update_mapper = HashMap::new();
 		let mut new_views = Vec::new();
 		for (outer, inner) in self.mapper.iter() {
-			eprintln!("{} -> {}", outer, inner);
 			if self.remove_list.iter().any(|x| x == inner) {
 				continue;
 			}
+			update_mapper.insert(*inner, new_views.len() as i32);
 			new_mapper.insert(*outer, new_views.len() as i32);
 			new_views.push(self.image_views[*inner as usize].clone());
 		}
@@ -92,6 +97,8 @@ impl Texman {
 		self.mapper = new_mapper;
 		self.image_views = new_views;
 		self.dirty = false;
+		self.id_alloc = self.image_views.len() as i32;
+		update_mapper
 	}
 
 	// NOTE: gc is called in tex_len, not called here!
@@ -101,9 +108,6 @@ impl Texman {
 		dstalloc: VkwDstAlloc,
 		layout: VkwTexLayout,
 	) -> Option<VkwTextureSet> {
-		if let Some(future) = self.future.take() {
-			future.flush().unwrap();
-		}
 		let iter: Vec<_> = self
 			.image_views
 			.iter()

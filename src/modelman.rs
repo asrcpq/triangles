@@ -68,12 +68,23 @@ impl Modelman {
 				})
 			})
 			.collect::<Vec<_>>();
-		assert!(!vertices.is_empty()); // TODO: return error instead
+		assert!(!vertices.is_empty()); // TODO: allow empty model
 		self.models.insert(id, CompiledModel {
 			visible: true,
 			z: 0,
 			vertices,
 		});
+	}
+
+	pub fn map_tex(&mut self, mapper: HashMap<i32, i32>) {
+		for model in self.models.values_mut() {
+			for v in model.vertices.iter_mut() {
+				let ref mut l = v.tex_layer;
+				if *l >= 0 {
+					*l = *mapper.get(l).unwrap();
+				}
+			}
+		}
 	}
 
 	pub fn set_z(&mut self, id: u32, z: u32) {
@@ -88,16 +99,21 @@ impl Modelman {
 		self.models.get_mut(&id).unwrap().visible = visible;
 	}
 
-	pub fn write_buffer(&mut self) -> usize {
+	pub fn write_buffer(&mut self) -> Option<usize> {
 		let mut buffers: Vec<&CompiledModel> = self.models.values().filter(|x| x.visible).collect();
 		buffers.sort_by_key(|x| x.z);
 		let len = buffers.iter().map(|x| x.vertices.len()).sum();
 
 		let buffer = self.buffer.clone();
-		let mut writer = buffer.write().unwrap();
+		let mut writer = if let Ok(writer) = buffer.write() {
+			writer
+		} else {
+			eprintln!("ERROR: Gpu locked");
+			return None;
+		};
 		for (v, w) in writer.iter_mut().zip(buffers.iter().flat_map(|x| &x.vertices)) {
 			*v = *w;
 		}
-		len
+		Some(len)
 	}
 }

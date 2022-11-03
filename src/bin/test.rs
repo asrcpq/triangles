@@ -138,8 +138,7 @@ fn main() {
 				..
 			} => {
 				if input.state == ElementState::Pressed {
-					rdr.insert_model(0, &model);
-					rdr.set_visibility(0, true);
+					// rdr.insert_model(0, &model);
 					rdr.redraw();
 				}
 			}
@@ -150,7 +149,6 @@ fn main() {
 			rdr.render2();
 		}
 		Event::MainEventsCleared => {
-			eprintln!("idle");
 			*ctrl = ControlFlow::Wait;
 		}
 		_ => {}

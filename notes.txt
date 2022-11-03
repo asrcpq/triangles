@@ -1,10 +1,10 @@
-# change:
-- text example(buggy)
+fix texman bug
 
-# next:
-- text renderer example
+after gc, the inner tex id is cleaned and sorted,
+but the compiled model wasn't updated
 
-# future:
+todo:
+- partial update(damage)
 - multi window
 - reuse command buffer
 - reuse data in vertex buffer

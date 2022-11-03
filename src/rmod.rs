@@ -70,6 +70,31 @@ impl Rmod {
 		camera: Camera,
 		viewport: Viewport,
 	) {
+		if self.texman.get_dirty() {
+			let (tex_len, update_mapper) = self.texman.tex_len();
+			self.modelman.map_tex(update_mapper);
+			self.pipeline_tex = get_pipeline_tex(
+				self.renderpass_tex.clone(),
+				self.base.device.clone(),
+				tex_len as u32,
+			);
+			let layout =
+				self.pipeline_tex.layout().set_layouts().get(1).unwrap();
+			let texset = self
+				.texman
+				.compile_set(
+					self.base.device.clone(),
+					self.base.dstalloc.clone(),
+					layout.clone()
+				);
+			self.texset = texset;
+		}
+		// dirty workaround for gpulock
+		let count = match self.modelman.write_buffer() {
+			Some(count) => count,
+			None => return,
+		};
+
 		let uniform_buffer = CpuAccessibleBuffer::from_data(
 			&self.base.memalloc,
 			BufferUsage {
@@ -89,25 +114,6 @@ impl Rmod {
 		)
 		.unwrap();
 
-		let count = self.modelman.write_buffer();
-		if self.texman.get_dirty() {
-			let tex_len = self.texman.tex_len();
-			self.pipeline_tex = get_pipeline_tex(
-				self.renderpass_tex.clone(),
-				self.base.device.clone(),
-				tex_len as u32,
-			);
-			let layout =
-				self.pipeline_tex.layout().set_layouts().get(1).unwrap();
-			let texset = self
-				.texman
-				.compile_set(
-					self.base.device.clone(),
-					self.base.dstalloc.clone(),
-					layout.clone()
-				);
-			self.texset = texset;
-		}
 		let texset = self.texset.clone().unwrap();
 		let clear_values = vec![Some([0.0; 4].into()), Some(1f32.into())];
 		builder
