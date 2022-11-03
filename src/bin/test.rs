@@ -41,7 +41,7 @@ fn bitw_loader(path: &str) -> (Teximg, [usize; 2]) {
 					data[pos_y + y][pos_x + x] = if tmp_data[y][x] {
 						[255; 4]
 					} else {
-						[0; 4]
+						[255, 0, 0, 32]
 					};
 				}
 			}
@@ -105,8 +105,8 @@ fn main() {
 	let (img, [col, row]) = bitw_loader("../bitw/data/lat15_terminus32x16.txt");
 	rdr.upload_tex(img, 0);
 	let mut vs = Vec::new();
-	for y in 0..=10 {
-		for x in 0..=10 {
+	for y in 0..=6 {
+		for x in 0..=6 {
 			vs.push([(x * col) as f32, (y * row) as f32, 0.0, 1.0]);
 		}
 	}
@@ -118,13 +118,31 @@ fn main() {
 			uvs.push([(x * col) as f32 / 1024.0, (y * row) as f32 / 1024.0])
 		}
 	}
-	let tex_faces = text2fs("hello, world", 10, texture_char_per_row, 0);
+	let tex_faces = text2fs("hello,world", 6, texture_char_per_row, 0);
 	let model = Model {
 		vs,
 		uvs,
 		tex_faces,
 	};
 	rdr.insert_model(0, &model);
+	rdr.set_z(0, 1);
+	let model = Model {
+		vs: vec![
+			[0.0, 0.0, 0.5, 1.0],
+			[30.0, 100.0, 0.0, 1.0],
+			[100.0, 30.0, 0.0, 1.0],
+		],
+		uvs: vec![[0.0; 2]],
+		tex_faces: vec![
+			TexFace {
+				vid: [0, 1, 2],
+				color: [0.0, 0.0, 1.0, 1.0],
+				layer: -1,
+				uvid: [0; 3],
+			}
+		],
+	};
+	rdr.insert_model(1, &model);
 	el.run(move |event, _, ctrl| match event {
 		Event::WindowEvent { event: e, .. } => match e {
 			WindowEvent::CloseRequested => {

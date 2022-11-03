@@ -225,8 +225,8 @@ pub fn get_pipeline_tex(
 		)
 		.viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
 		.fragment_shader(fs.entry_point("main").unwrap(), ())
-		.color_blend_state(ColorBlendState::new(subpass.num_color_attachments()).blend_alpha())
 		.depth_stencil_state(DepthStencilState::simple_depth_test())
+		.color_blend_state(ColorBlendState::new(subpass.num_color_attachments()).blend_alpha())
 		.render_pass(subpass)
 		.with_pipeline_layout(device.clone(), pipeline_layout)
 		.unwrap();

@@ -1,7 +1,4 @@
-fix texman bug
-
-after gc, the inner tex id is cleaned and sorted,
-but the compiled model wasn't updated
+simply sync everywhere
 
 todo:
 - partial update(damage)

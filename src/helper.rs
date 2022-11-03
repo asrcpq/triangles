@@ -15,7 +15,6 @@ use vulkano::memory::allocator::StandardMemoryAllocator;
 use vulkano::pipeline::GraphicsPipeline;
 use vulkano::render_pass::{Framebuffer, RenderPass};
 use vulkano::swapchain::{Surface, Swapchain};
-use vulkano::sync::GpuFuture;
 
 pub type VkwCommandBuilder = AutoCommandBufferBuilder<
 	PrimaryAutoCommandBuffer,
@@ -24,7 +23,6 @@ pub type VkwCommandBuilder = AutoCommandBufferBuilder<
 pub type VkwPhysicalDevice = Arc<PhysicalDevice>;
 pub type VkwDevice = Arc<Device>;
 pub type VkwFramebuffer = Arc<Framebuffer>;
-pub type VkwFuture = Box<dyn GpuFuture>;
 pub type VkwImageView = Arc<ImageView<ImmutableImage>>;
 pub type VkwImages = Vec<Arc<SwapchainImage>>;
 pub type VkwInstance = Arc<Instance>;

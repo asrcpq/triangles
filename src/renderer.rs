@@ -6,7 +6,7 @@ use vulkano::swapchain::SwapchainPresentInfo;
 use vulkano::swapchain::{
 	self, AcquireError, SwapchainCreateInfo, SwapchainCreationError,
 };
-use vulkano::sync::{self, FlushError, GpuFuture};
+use vulkano::sync::{self, GpuFuture};
 use vulkano::instance::debug::{
 	DebugUtilsMessengerCreateInfo,
 	DebugUtilsMessageType,
@@ -29,8 +29,6 @@ pub struct Renderer {
 	rmod: Rmod,
 	viewport: Viewport,
 	dirty: bool,
-
-	prev: Option<VkwFuture>,
 	_debug_callback: DebugUtilsMessenger,
 }
 
@@ -38,7 +36,6 @@ impl Renderer {
 	pub fn new<E>(el: &EventLoopWindowTarget<E>) -> Self {
 		let base = Base::new(el);
 		let _debug_callback = unsafe { get_debug_callback(base.instance.clone()) };
-		let prev = Some(sync::now(base.device.clone()).boxed());
 		let rmod = Rmod::new(base.clone());
 		let viewport = Viewport {
 			origin: [0.0, 0.0],
@@ -49,7 +46,6 @@ impl Renderer {
 		let mut result = Self {
 			base,
 			rmod,
-			prev,
 			viewport,
 			dirty: false,
 			_debug_callback,
@@ -78,14 +74,13 @@ impl Renderer {
 		).unwrap();
 		self.rmod.texman.upload(image, id, self.base.memalloc.clone(), &mut builder);
 		let command_buffer = Box::new(builder.build().unwrap());
-		let future = self
-			.prev
-			.take()
-			.unwrap()
+		sync::now(self.base.device.clone())
 			.then_execute(self.base.queue.clone(), command_buffer)
 			.unwrap()
-			.then_signal_fence_and_flush();
-		self.prev = Some(future.unwrap().boxed());
+			.then_signal_fence_and_flush()
+			.unwrap()
+			.wait(None)
+			.unwrap();
 	}
 
 	pub fn remove_tex(&mut self, outer: i32) {
@@ -120,7 +115,6 @@ impl Renderer {
 	}
 
 	pub fn render(&mut self, camera: M4) {
-		self.prev.as_mut().unwrap().cleanup_finished();
 		if self.dirty {
 			self.create_swapchain();
 			self.dirty = false;
@@ -153,10 +147,7 @@ impl Renderer {
 		);
 		let command_buffer = Box::new(builder.build().unwrap());
 
-		let future = self
-			.prev
-			.take()
-			.unwrap()
+		let future = sync::now(self.base.device.clone())
 			.join(acquire_future)
 			.then_execute(self.base.queue.clone(), command_buffer)
 			.unwrap()
@@ -167,20 +158,9 @@ impl Renderer {
 					image_num
 				),
 			)
-			.then_signal_fence_and_flush();
-		match future {
-			Ok(future) => {
-				self.prev = Some(future.boxed());
-			}
-			Err(FlushError::OutOfDate) => {
-				self.dirty = true;
-				self.prev = Some(sync::now(self.base.device.clone()).boxed());
-			}
-			Err(e) => {
-				println!("Failed to flush future: {:?}", e);
-				self.prev = Some(sync::now(self.base.device.clone()).boxed());
-			}
-		}
+			.then_signal_fence_and_flush()
+			.unwrap();
+		future.wait(None).unwrap();
 	}
 
 	fn create_swapchain(&mut self) {
