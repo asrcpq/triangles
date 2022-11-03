@@ -17,6 +17,16 @@ impl Teximg {
 		}
 	}
 
+	pub fn filled(dim: [u32; 2], value: [u8; 4]) -> Self {
+		Self {
+			dim,
+			data: value.into_iter()
+				.cycle()
+				.take((4 * dim[0] * dim[1]) as usize)
+				.collect(),
+		}
+	}
+
 	pub fn preset_rgb565() -> Self {
 		let image = ImageBuffer::from_fn(1024, 64, |x, y| {
 			image::Rgba::from([

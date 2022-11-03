@@ -1,5 +1,5 @@
 # change:
-- colorize
+- renderer does not require texture size >= 1
 
 # next:
 - text renderer example

@@ -4,12 +4,10 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use triangles::model::Model;
 use triangles::model::TexFace;
 use triangles::renderer::Renderer;
-use triangles::teximg::Teximg;
 
 fn main() {
 	let el = EventLoop::new();
 	let mut rdr = Renderer::new(&el);
-	rdr.upload_tex(Teximg::preset_rgb565(), 0);
 	let vs = vec![
 		[000., 000., 1.0, 1.0],
 		[200., 000., 0.0, 1.0],

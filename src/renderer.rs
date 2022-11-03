@@ -46,14 +46,16 @@ impl Renderer {
 			depth_range: 0.0..1.0,
 		};
 
-		Self {
+		let mut result = Self {
 			base,
 			rmod,
 			prev,
 			viewport,
 			dirty: false,
 			_debug_callback,
-		}
+		};
+		result.upload_tex(Teximg::filled([1, 1], [0; 4]), -2);
+		result
 	}
 
 	fn get_window(&self) -> &Window {
