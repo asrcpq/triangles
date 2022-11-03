@@ -8,6 +8,7 @@ use vulkano::descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet};
 use vulkano::format::Format;
 use vulkano::image::{AttachmentImage, ImageAccess};
 use vulkano::image::view::ImageView;
+use vulkano::pipeline::graphics::color_blend::ColorBlendState;
 use vulkano::pipeline::graphics::depth_stencil::DepthStencilState;
 use vulkano::pipeline::graphics::input_assembly::{
 	InputAssemblyState, PrimitiveTopology,
@@ -209,6 +210,7 @@ pub fn get_pipeline_tex(
 	)
 	.unwrap();
 
+	let subpass = Subpass::from(render_pass.clone(), 0).unwrap();
 	let pipeline = GraphicsPipeline::start()
 		.vertex_input_state(BuffersDefinition::new().vertex::<VertexTex>())
 		.vertex_shader(vs.entry_point("main").unwrap(), ())
@@ -217,8 +219,9 @@ pub fn get_pipeline_tex(
 		)
 		.viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
 		.fragment_shader(fs.entry_point("main").unwrap(), ())
+		.color_blend_state(ColorBlendState::new(subpass.num_color_attachments()).blend_alpha())
 		.depth_stencil_state(DepthStencilState::simple_depth_test())
-		.render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
+		.render_pass(subpass)
 		.with_pipeline_layout(device.clone(), pipeline_layout)
 		.unwrap();
 	pipeline

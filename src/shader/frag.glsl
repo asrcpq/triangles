@@ -13,7 +13,7 @@ void main() {
 	if (f_tex_layer >= 0) {
 		o_color = texture(tex[f_tex_layer], f_tex_coord);
 	} else {
-		o_color = vec4(0.0, 0.0, 0.0, 0.0);
+		o_color = vec4(0.0, 0.0, 0.0, 1.0);
 	}
-	o_color = f_color.w * f_color + (1.0 - f_color.w) * o_color;
+	o_color.xyz = f_color.w * f_color.xyz + (1.0 - f_color.w) * o_color.xyz;
 }
