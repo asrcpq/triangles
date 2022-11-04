@@ -24,7 +24,7 @@ use vulkano::render_pass::{Framebuffer, FramebufferCreateInfo, Subpass};
 use crate::base::Base;
 use crate::camera::Camera;
 use crate::helper::*;
-use crate::modelman::Modelman;
+use crate::model::modelman::Modelman;
 use crate::shader;
 use crate::texman::Texman;
 use crate::vertex::VertexTex;

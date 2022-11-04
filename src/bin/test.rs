@@ -1,8 +1,7 @@
 use winit::event::{ElementState, Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 
-use triangles::model::Model;
-use triangles::model::TexFace;
+use triangles::model::cmodel::{Model, TexFace};
 use triangles::renderer::Renderer;
 use triangles::bmtext::FontConfig;
 
@@ -18,7 +17,8 @@ fn main() {
 	rdr.upload_tex(img, 0);
 	let mut model = fc.generate_model();
 	model.tex_faces = fc.text2fs("hello,world", 0);
-	let _text_model = rdr.insert_model_with_z(&model, 1);
+	let mut text_model = rdr.insert_model(&model);
+	text_model.set_z(1);
 
 	// draw triangle
 	let model = Model {

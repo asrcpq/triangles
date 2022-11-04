@@ -1,31 +1,20 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::rc::Rc;
+use std::cell::Ref;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
 
 use crate::helper::*;
-use crate::model::Model;
 use crate::vertex::VertexTex;
-
-// never reuse id, u64 is considered sufficient
-type Mid = u64;
-
-#[derive(Hash, Clone, Debug)]
-pub struct ModelHandle(Rc<Mid>);
-
-struct CompiledModel {
-	pub visible: bool,
-	pub z: i32,
-	pub vertices: Vec<VertexTex>,
-}
+use super::compiled_model::CompiledModel;
+use super::cmodel::Model;
+use super::model_ref::ModelRef;
 
 const BUFSIZE: usize = 1 << 24;
 type VertexTexBuffer = Arc<CpuAccessibleBuffer<[VertexTex; BUFSIZE]>>;
 
 pub struct Modelman {
 	pub buffer: VertexTexBuffer,
-	id_alloc: Mid,
-	models: HashMap<Rc<Mid>, CompiledModel>,
+	models: Vec<ModelRef>,
 }
 
 impl Modelman {
@@ -43,8 +32,7 @@ impl Modelman {
 		};
 		Self {
 			buffer,
-			id_alloc: 0,
-			models: HashMap::new(),
+			models: Default::default(),
 		}
 	}
 
@@ -53,7 +41,7 @@ impl Modelman {
 		z: i32,
 		model: &Model,
 		mapper: &HashMap<i32, i32>,
-	) -> ModelHandle {
+	) -> ModelRef {
 		let vertices = model
 			.tex_faces
 			.iter()
@@ -79,21 +67,19 @@ impl Modelman {
 			})
 			.collect::<Vec<_>>();
 		assert!(!vertices.is_empty()); // TODO: allow empty model
-		let handle = Rc::new(self.id_alloc);
-		self.id_alloc += 1;
-		self.models.insert(
-			handle.clone(),
-			CompiledModel {
-				visible: true,
-				z,
-				vertices,
-			},
-		);
-		ModelHandle(handle)
+		let model = CompiledModel {
+			visible: true,
+			z,
+			vertices,
+		};
+		let model = ModelRef::new(model);
+		self.models.push(model.clone());
+		model
 	}
 
 	pub fn map_tex(&mut self, mapper: HashMap<i32, i32>) {
-		for model in self.models.values_mut() {
+		for model in self.models.iter_mut() {
+			let mut model = model.borrow_mut();
 			for v in model.vertices.iter_mut() {
 				let l = &mut v.tex_layer;
 				if *l >= 0 {
@@ -103,30 +89,18 @@ impl Modelman {
 		}
 	}
 
-	pub fn set_z(&mut self, handle: &ModelHandle, z: i32) {
-		self.models.get_mut(&handle.0).unwrap().z = z;
-	}
-
 	pub fn gc(&mut self) {
-		let mut removal_list = Vec::new();
-		for (k, _) in self.models.iter() {
-			if Rc::strong_count(k) == 1 {
-				removal_list.push(k.clone());
+		for model in std::mem::take(&mut self.models).into_iter() {
+			if !model.dropped() {
+				self.models.push(model);
 			}
 		}
-		for removal in removal_list.iter() {
-			self.models.remove(removal);
-		}
-	}
-
-	pub fn set_visibility(&mut self, handle: &ModelHandle, visible: bool) {
-		self.models.get_mut(&handle.0).unwrap().visible = visible;
 	}
 
 	pub fn write_buffer(&mut self) -> Option<usize> {
 		self.gc();
-		let mut buffers: Vec<&CompiledModel> =
-			self.models.values().filter(|x| x.visible).collect();
+		let mut buffers: Vec<Ref<CompiledModel>> =
+			self.models.iter().map(|x| x.borrow()).filter(|x| x.visible).collect();
 		buffers.sort_by_key(|x| x.z);
 		let len = buffers.iter().map(|x| x.vertices.len()).sum();
 

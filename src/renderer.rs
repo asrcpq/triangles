@@ -17,8 +17,8 @@ use winit::window::Window;
 use crate::base::Base;
 use crate::camera::Camera;
 use crate::helper::*;
-use crate::model::Model;
-use crate::modelman::ModelHandle;
+use crate::model::cmodel::Model;
+use crate::model::model_ref::ModelRef;
 use crate::rmod::Rmod;
 use crate::teximg::Teximg;
 use crate::M4;
@@ -58,29 +58,6 @@ impl Renderer {
 
 	pub fn remove_tex(&mut self, outer: i32) {
 		self.rmod.texman.remove(outer);
-	}
-}
-
-// modelman
-impl Renderer {
-	pub fn insert_model(&mut self, model: &Model) -> ModelHandle {
-		self.rmod
-			.modelman
-			.insert(0, model, &self.rmod.texman.mapper)
-	}
-
-	pub fn insert_model_with_z(&mut self, model: &Model, z: i32) -> ModelHandle {
-		self.rmod
-			.modelman
-			.insert(z, model, &self.rmod.texman.mapper)
-	}
-
-	pub fn set_z(&mut self, handle: &ModelHandle, z: i32) {
-		self.rmod.modelman.set_z(handle, z);
-	}
-
-	pub fn set_visibility(&mut self, handle: &ModelHandle, visible: bool) {
-		self.rmod.modelman.set_visibility(handle, visible);
 	}
 }
 
@@ -126,6 +103,12 @@ impl Renderer {
 
 	pub fn damage(&mut self) {
 		self.dirty = true;
+	}
+
+	pub fn insert_model(&mut self, model: &Model) -> ModelRef {
+		self.rmod
+			.modelman
+			.insert(0, model, &self.rmod.texman.mapper)
 	}
 
 	pub fn render2(&mut self) {

@@ -1,4 +1,4 @@
-use crate::model::{Model, TexFace};
+use crate::model::cmodel::{Model, TexFace};
 use crate::teximg::Teximg;
 
 #[derive(Default)]

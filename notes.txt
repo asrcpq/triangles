@@ -1,6 +1,5 @@
-model handler
+move operation to handler, split model mod
 
 todo:
-- texman handle
+- texman handle, move operations to handler
 - model renderer debug
-- move operations to handler

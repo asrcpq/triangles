@@ -6,7 +6,6 @@ pub mod teximg;
 mod base;
 mod camera;
 mod helper;
-mod modelman;
 mod rmod;
 mod shader;
 mod texman;
