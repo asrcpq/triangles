@@ -1,5 +1,5 @@
-rename texface to face
+solve latency
 
 todo:
+- font cursor renderer
 - multiview
-- timer dbgger

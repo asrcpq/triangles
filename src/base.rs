@@ -8,7 +8,7 @@ use vulkano::device::{
 use vulkano::image::ImageUsage;
 use vulkano::instance::{Instance, InstanceCreateInfo, InstanceExtensions};
 use vulkano::memory::allocator::StandardMemoryAllocator;
-use vulkano::swapchain::{Swapchain, SwapchainCreateInfo};
+use vulkano::swapchain::{PresentMode, Swapchain, SwapchainCreateInfo};
 use vulkano::VulkanLibrary;
 use vulkano_win::VkSurfaceBuild;
 use winit::dpi::{LogicalSize, Size};
@@ -189,6 +189,7 @@ pub fn get_swapchain_and_images(
 				..ImageUsage::empty()
 			},
 			composite_alpha,
+			present_mode: PresentMode::Mailbox,
 			..Default::default()
 		},
 	)
