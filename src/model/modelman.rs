@@ -40,12 +40,11 @@ impl Modelman {
 
 	pub fn insert(
 		&mut self,
-		z: i32,
 		model: &Model,
 		mapper: &HashMap<i32, i32>,
 	) -> ModelRef {
 		let vertices = model
-			.tex_faces
+			.faces
 			.iter()
 			.flat_map(|face| {
 				(0..3).map(|i| {
@@ -71,7 +70,7 @@ impl Modelman {
 		assert!(!vertices.is_empty()); // TODO: allow empty model
 		let model = CompiledModel {
 			visible: true,
-			z,
+			z: 0,
 			vertices,
 		};
 		let model = ModelRef::new(model);

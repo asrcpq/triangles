@@ -106,10 +106,13 @@ impl Renderer {
 		self.dirty = true;
 	}
 
-	pub fn insert_model(&mut self, model: &Model) -> ModelRef {
+	pub fn insert_model(
+		&mut self,
+		model: &Model,
+	) -> ModelRef {
 		self.rmod
 			.modelman
-			.insert(0, model, &self.rmod.texman.mapper)
+			.insert(model, &self.rmod.texman.mapper)
 	}
 
 	pub fn render2(&mut self) {

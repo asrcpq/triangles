@@ -1,4 +1,4 @@
-use crate::model::cmodel::{Model, TexFace};
+use crate::model::cmodel::{Model, Face};
 use crate::teximg::Teximg;
 
 #[derive(Default)]
@@ -108,7 +108,7 @@ impl FontConfig {
 	pub fn generate_model(&self) -> Model {
 		let vs = self.generate_vs();
 		let uvs = self.generate_uvs();
-		Model {vs, uvs, tex_faces: Default::default()}
+		Model {vs, uvs, faces: Default::default()}
 	}
 
 	fn get_terminal_size_in_char(&self) -> [u32; 2] {
@@ -125,7 +125,7 @@ impl FontConfig {
 		]
 	}
 
-	pub fn text2fs(&self, text: &str, layer: i32) -> Vec<TexFace> {
+	pub fn text2fs(&self, text: &str, layer: i32) -> Vec<Face> {
 		// x1 terminal size(in char), x2 texture size(in char)
 		let [x1, _] = self.get_terminal_size_in_char();
 		let [x2, _] = self.get_texture_size_in_char();
@@ -144,13 +144,13 @@ impl FontConfig {
 			let texture_leftup = pos_y * (x2 + 1) + pos_x;
 			let texture_leftdown = (pos_y + 1) * (x2 + 1) + pos_x;
 	
-			let face1 = TexFace {
+			let face1 = Face {
 				vid: [screen_leftup, screen_leftup + 1, screen_leftdown],
 				color: [0.0; 4],
 				layer,
 				uvid: [texture_leftup, texture_leftup + 1, texture_leftdown],
 			};
-			let face2 = TexFace {
+			let face2 = Face {
 				vid: [screen_leftup + 1, screen_leftdown, screen_leftdown + 1],
 				color: [0.0; 4],
 				layer,

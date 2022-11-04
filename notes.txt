@@ -1,4 +1,4 @@
-zoom
+rename texface to face
 
 todo:
 - multiview
