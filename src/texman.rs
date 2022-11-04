@@ -10,6 +10,9 @@ use crate::teximg::Teximg;
 
 #[derive(Default)]
 pub struct Texman {
+	// we don't use outer id allocator
+	// to allow creating model in advance of uploading that texture
+	// user is responsible for preventing outer id collision.
 	pub mapper: HashMap<i32, i32>,
 
 	// pending remove_list record inner id only,
@@ -22,6 +25,7 @@ pub struct Texman {
 	dirty: bool,
 }
 
+// TODO: mutable image
 fn create_image_view(
 	image: Teximg,
 	memalloc: VkwMemAlloc,

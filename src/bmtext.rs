@@ -71,14 +71,13 @@ impl FontConfig {
 		let dim = [1024, 1024];
 		self.texture_size = dim;
 		self.font_size = [col, row];
-		let result = Teximg {
+		Teximg {
 			dim,
 			data: data
 				.into_iter()
 				.flat_map(|x| x.into_iter().flat_map(|x| x.into_iter()))
 				.collect(),
-		};
-		result
+		}
 	}
 
 	fn generate_vs(&self) -> Vec<[f32; 4]> {
