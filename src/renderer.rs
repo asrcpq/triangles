@@ -100,10 +100,16 @@ impl Renderer {
 	pub fn insert_model(&mut self, id: u32, model: &Model) {
 		self.rmod
 			.modelman
-			.insert(id, model, &self.rmod.texman.mapper)
+			.insert(id, 0, model, &self.rmod.texman.mapper)
 	}
 
-	pub fn set_z(&mut self, id: u32, z: u32) {
+	pub fn insert_model_with_z(&mut self, id: u32, model: &Model, z: i32) {
+		self.rmod
+			.modelman
+			.insert(id, z, model, &self.rmod.texman.mapper)
+	}
+
+	pub fn set_z(&mut self, id: u32, z: i32) {
 		self.rmod.modelman.set_z(id, z);
 	}
 

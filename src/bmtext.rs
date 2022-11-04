@@ -1,4 +1,4 @@
-use crate::model::TexFace;
+use crate::model::{Model, TexFace};
 use crate::teximg::Teximg;
 
 #[derive(Default)]
@@ -81,7 +81,7 @@ impl FontConfig {
 		result
 	}
 
-	pub fn generate_vs(&self) -> Vec<[f32; 4]> {
+	fn generate_vs(&self) -> Vec<[f32; 4]> {
 		let [xx, yy] = self.get_terminal_size_in_char();
 		let [col, row] = self.font_size;
 		let mut vs = Vec::new();
@@ -93,7 +93,7 @@ impl FontConfig {
 		vs
 	}
 
-	pub fn generate_uvs(&self) -> Vec<[f32; 2]> {
+	fn generate_uvs(&self) -> Vec<[f32; 2]> {
 		let [xx, yy] = self.get_texture_size_in_char();
 		let [tx, ty] = self.texture_size;
 		let [col, row] = self.font_size;
@@ -104,6 +104,12 @@ impl FontConfig {
 			}
 		}
 		uvs
+	}
+
+	pub fn generate_model(&self) -> Model {
+		let vs = self.generate_vs();
+		let uvs = self.generate_uvs();
+		Model {vs, uvs, tex_faces: Default::default()}
 	}
 
 	fn get_terminal_size_in_char(&self) -> [u32; 2] {

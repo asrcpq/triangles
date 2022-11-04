@@ -1,4 +1,4 @@
-split bitmap text rendering to module
+add "insert model with z" method
 
 todo:
 - partial update(damage)

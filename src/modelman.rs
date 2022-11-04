@@ -8,7 +8,7 @@ use crate::vertex::VertexTex;
 
 struct CompiledModel {
 	pub visible: bool,
-	pub z: u32,
+	pub z: i32,
 	pub vertices: Vec<VertexTex>,
 }
 
@@ -42,6 +42,7 @@ impl Modelman {
 	pub fn insert(
 		&mut self,
 		id: u32,
+		z: i32,
 		model: &Model,
 		mapper: &HashMap<i32, i32>,
 	) {
@@ -74,7 +75,7 @@ impl Modelman {
 			id,
 			CompiledModel {
 				visible: true,
-				z: 0,
+				z,
 				vertices,
 			},
 		);
@@ -91,7 +92,7 @@ impl Modelman {
 		}
 	}
 
-	pub fn set_z(&mut self, id: u32, z: u32) {
+	pub fn set_z(&mut self, id: u32, z: i32) {
 		self.models.get_mut(&id).unwrap().z = z;
 	}
 

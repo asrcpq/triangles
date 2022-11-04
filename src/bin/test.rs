@@ -16,12 +16,9 @@ fn main() {
 	fc.resize_screen(rdr.get_size());
 	let img = fc.bitw_loader("../bitw/data/lat15_terminus32x16.txt");
 	rdr.upload_tex(img, 0);
-	let vs = fc.generate_vs();
-	let uvs = fc.generate_uvs();
-	let tex_faces = fc.text2fs("hello,world", 0);
-	let model = Model { vs, uvs, tex_faces };
-	rdr.insert_model(0, &model);
-	rdr.set_z(0, 1);
+	let mut model = fc.generate_model();
+	model.tex_faces = fc.text2fs("hello,world", 0);
+	rdr.insert_model_with_z(0, &model, 1);
 
 	// draw triangle
 	let model = Model {
