@@ -1,7 +1,6 @@
-add "insert model with z" method
+model handler
 
 todo:
-- partial update(damage)
-- multi window
-- reuse command buffer
-- reuse data in vertex buffer
+- texman handle
+- model renderer debug
+- move operations to handler

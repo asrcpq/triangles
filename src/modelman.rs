@@ -1,10 +1,17 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::rc::Rc;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
 
 use crate::helper::*;
 use crate::model::Model;
 use crate::vertex::VertexTex;
+
+// never reuse id, u64 is considered sufficient
+type Mid = u64;
+
+#[derive(Hash, Clone, Debug)]
+pub struct ModelHandle(Rc<Mid>);
 
 struct CompiledModel {
 	pub visible: bool,
@@ -17,7 +24,8 @@ type VertexTexBuffer = Arc<CpuAccessibleBuffer<[VertexTex; BUFSIZE]>>;
 
 pub struct Modelman {
 	pub buffer: VertexTexBuffer,
-	models: HashMap<u32, CompiledModel>,
+	id_alloc: Mid,
+	models: HashMap<Rc<Mid>, CompiledModel>,
 }
 
 impl Modelman {
@@ -35,17 +43,17 @@ impl Modelman {
 		};
 		Self {
 			buffer,
+			id_alloc: 0,
 			models: HashMap::new(),
 		}
 	}
 
 	pub fn insert(
 		&mut self,
-		id: u32,
 		z: i32,
 		model: &Model,
 		mapper: &HashMap<i32, i32>,
-	) {
+	) -> ModelHandle {
 		let vertices = model
 			.tex_faces
 			.iter()
@@ -71,14 +79,17 @@ impl Modelman {
 			})
 			.collect::<Vec<_>>();
 		assert!(!vertices.is_empty()); // TODO: allow empty model
+		let handle = Rc::new(self.id_alloc);
+		self.id_alloc += 1;
 		self.models.insert(
-			id,
+			handle.clone(),
 			CompiledModel {
 				visible: true,
 				z,
 				vertices,
 			},
 		);
+		ModelHandle(handle)
 	}
 
 	pub fn map_tex(&mut self, mapper: HashMap<i32, i32>) {
@@ -92,19 +103,28 @@ impl Modelman {
 		}
 	}
 
-	pub fn set_z(&mut self, id: u32, z: i32) {
-		self.models.get_mut(&id).unwrap().z = z;
+	pub fn set_z(&mut self, handle: &ModelHandle, z: i32) {
+		self.models.get_mut(&handle.0).unwrap().z = z;
 	}
 
-	pub fn remove(&mut self, id: u32) -> bool {
-		self.models.remove(&id).is_some()
+	pub fn gc(&mut self) {
+		let mut removal_list = Vec::new();
+		for (k, _) in self.models.iter() {
+			if Rc::strong_count(k) == 1 {
+				removal_list.push(k.clone());
+			}
+		}
+		for removal in removal_list.iter() {
+			self.models.remove(removal);
+		}
 	}
 
-	pub fn set_visibility(&mut self, id: u32, visible: bool) {
-		self.models.get_mut(&id).unwrap().visible = visible;
+	pub fn set_visibility(&mut self, handle: &ModelHandle, visible: bool) {
+		self.models.get_mut(&handle.0).unwrap().visible = visible;
 	}
 
 	pub fn write_buffer(&mut self) -> Option<usize> {
+		self.gc();
 		let mut buffers: Vec<&CompiledModel> =
 			self.models.values().filter(|x| x.visible).collect();
 		buffers.sort_by_key(|x| x.z);

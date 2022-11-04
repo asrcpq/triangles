@@ -18,6 +18,7 @@ use crate::base::Base;
 use crate::camera::Camera;
 use crate::helper::*;
 use crate::model::Model;
+use crate::modelman::ModelHandle;
 use crate::rmod::Rmod;
 use crate::teximg::Teximg;
 use crate::M4;
@@ -28,6 +29,59 @@ pub struct Renderer {
 	viewport: Viewport,
 	dirty: bool,
 	_debug_callback: DebugUtilsMessenger,
+}
+
+// texman
+impl Renderer {
+	pub fn upload_tex(&mut self, image: Teximg, id: i32) {
+		let mut builder = AutoCommandBufferBuilder::primary(
+			&self.base.comalloc,
+			self.base.queue.queue_family_index(),
+			CommandBufferUsage::OneTimeSubmit,
+		)
+		.unwrap();
+		self.rmod.texman.upload(
+			image,
+			id,
+			self.base.memalloc.clone(),
+			&mut builder,
+		);
+		let command_buffer = Box::new(builder.build().unwrap());
+		sync::now(self.base.device.clone())
+			.then_execute(self.base.queue.clone(), command_buffer)
+			.unwrap()
+			.then_signal_fence_and_flush()
+			.unwrap()
+			.wait(None)
+			.unwrap();
+	}
+
+	pub fn remove_tex(&mut self, outer: i32) {
+		self.rmod.texman.remove(outer);
+	}
+}
+
+// modelman
+impl Renderer {
+	pub fn insert_model(&mut self, model: &Model) -> ModelHandle {
+		self.rmod
+			.modelman
+			.insert(0, model, &self.rmod.texman.mapper)
+	}
+
+	pub fn insert_model_with_z(&mut self, model: &Model, z: i32) -> ModelHandle {
+		self.rmod
+			.modelman
+			.insert(z, model, &self.rmod.texman.mapper)
+	}
+
+	pub fn set_z(&mut self, handle: &ModelHandle, z: i32) {
+		self.rmod.modelman.set_z(handle, z);
+	}
+
+	pub fn set_visibility(&mut self, handle: &ModelHandle, visible: bool) {
+		self.rmod.modelman.set_visibility(handle, visible);
+	}
 }
 
 impl Renderer {
@@ -68,57 +122,6 @@ impl Renderer {
 
 	pub fn redraw(&mut self) {
 		self.get_window().request_redraw();
-	}
-
-	pub fn upload_tex(&mut self, image: Teximg, id: i32) {
-		let mut builder = AutoCommandBufferBuilder::primary(
-			&self.base.comalloc,
-			self.base.queue.queue_family_index(),
-			CommandBufferUsage::OneTimeSubmit,
-		)
-		.unwrap();
-		self.rmod.texman.upload(
-			image,
-			id,
-			self.base.memalloc.clone(),
-			&mut builder,
-		);
-		let command_buffer = Box::new(builder.build().unwrap());
-		sync::now(self.base.device.clone())
-			.then_execute(self.base.queue.clone(), command_buffer)
-			.unwrap()
-			.then_signal_fence_and_flush()
-			.unwrap()
-			.wait(None)
-			.unwrap();
-	}
-
-	pub fn remove_tex(&mut self, outer: i32) {
-		self.rmod.texman.remove(outer);
-	}
-
-	pub fn insert_model(&mut self, id: u32, model: &Model) {
-		self.rmod
-			.modelman
-			.insert(id, 0, model, &self.rmod.texman.mapper)
-	}
-
-	pub fn insert_model_with_z(&mut self, id: u32, model: &Model, z: i32) {
-		self.rmod
-			.modelman
-			.insert(id, z, model, &self.rmod.texman.mapper)
-	}
-
-	pub fn set_z(&mut self, id: u32, z: i32) {
-		self.rmod.modelman.set_z(id, z);
-	}
-
-	pub fn remove(&mut self, id: u32) -> bool {
-		self.rmod.modelman.remove(id)
-	}
-
-	pub fn set_visibility(&mut self, id: u32, visible: bool) {
-		self.rmod.modelman.set_visibility(id, visible);
 	}
 
 	pub fn damage(&mut self) {

@@ -18,7 +18,7 @@ fn main() {
 	rdr.upload_tex(img, 0);
 	let mut model = fc.generate_model();
 	model.tex_faces = fc.text2fs("hello,world", 0);
-	rdr.insert_model_with_z(0, &model, 1);
+	let _text_model = rdr.insert_model_with_z(&model, 1);
 
 	// draw triangle
 	let model = Model {
@@ -35,7 +35,7 @@ fn main() {
 			uvid: [0; 3],
 		}],
 	};
-	rdr.insert_model(1, &model);
+	let _triangle_model = rdr.insert_model(&model);
 
 	// event loop
 	el.run(move |event, _, ctrl| match event {
