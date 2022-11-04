@@ -14,6 +14,7 @@ pub struct Camcon {
 #[derive(Default)]
 struct ControlState {
 	pub move_button: bool,
+	pub zoom_button: bool,
 	pub prev_cursor_pos: Option<V2>,
 }
 
@@ -66,7 +67,11 @@ impl Camcon {
 					return false
 				}
 				if let Some(prev_pos) = self.control_state.prev_cursor_pos.take() {
-					self.move_view(pos - prev_pos);
+					if self.control_state.zoom_button {
+						self.zoom(((pos - prev_pos).y / -100.0).exp());
+					} else {
+						self.move_view(pos - prev_pos);
+					}
 					result = true;
 				}
 				self.control_state.prev_cursor_pos = Some(pos);
@@ -79,6 +84,9 @@ impl Camcon {
 				if *button == MouseButton::Middle {
 					self.control_state.move_button = *state == ElementState::Pressed;
 				}
+			}
+			WindowEvent::ModifiersChanged(state) => {
+				self.control_state.zoom_button = state.ctrl();
 			}
 			_ => {},
 		}

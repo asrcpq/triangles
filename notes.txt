@@ -1,4 +1,5 @@
-modelman dirty flag
+zoom
 
 todo:
 - multiview
+- timer dbgger
