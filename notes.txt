@@ -1,4 +1,4 @@
-camcon simple view moving
+introduce future again
 
 todo:
-- reduce lag(model dirty detect, async)
+- multiview

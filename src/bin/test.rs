@@ -52,17 +52,18 @@ fn main() {
 					*ctrl = ControlFlow::Exit;
 				}
 				WindowEvent::Resized(_) => {
+					let ssize = rdr.get_size();
+					camcon.resize(ssize);
 					rdr.damage();
 				}
 				WindowEvent::KeyboardInput { input, .. } => {
 					if input.state == ElementState::Pressed {
-						// rdr.insert_model(0, &model);
 						rdr.redraw();
 					}
 				}
 				_ => {}
 			}
-		},
+		}
 		Event::RedrawRequested(_window_id) => {
 			rdr.render(camcon.get_camera());
 		}

@@ -28,6 +28,7 @@ pub struct Renderer {
 	rmod: Rmod,
 	viewport: Viewport,
 	dirty: bool,
+	future: Option<VkwFuture>,
 	_debug_callback: DebugUtilsMessenger,
 }
 
@@ -47,13 +48,12 @@ impl Renderer {
 			&mut builder,
 		);
 		let command_buffer = Box::new(builder.build().unwrap());
-		sync::now(self.base.device.clone())
+		let future = sync::now(self.base.device.clone())
 			.then_execute(self.base.queue.clone(), command_buffer)
 			.unwrap()
 			.then_signal_fence_and_flush()
-			.unwrap()
-			.wait(None)
 			.unwrap();
+		self.future = Some(future.boxed());
 	}
 
 	pub fn remove_tex(&mut self, outer: i32) {
@@ -78,6 +78,7 @@ impl Renderer {
 			rmod,
 			viewport,
 			dirty: false,
+			future: None,
 			_debug_callback,
 		};
 		result.upload_tex(Teximg::filled([1, 1], [0; 4]), -2);
@@ -141,6 +142,9 @@ impl Renderer {
 			CommandBufferUsage::OneTimeSubmit,
 		)
 		.unwrap();
+		if let Some(future) = self.future.take() {
+			drop(future);
+		}
 		self.rmod.build_command(
 			&mut builder,
 			image_num as usize,
@@ -164,11 +168,10 @@ impl Renderer {
 			)
 			.then_signal_fence_and_flush()
 			.unwrap();
-		future.wait(None).unwrap();
+		self.future = Some(future.boxed());
 	}
 
 	fn create_swapchain(&mut self) {
-		eprintln!("Recreate swapchain");
 		let dimensions: [u32; 2] = self.get_window().inner_size().into();
 		let swapchain = self.base.swapchain.clone();
 		let (new_swapchain, new_images) =
