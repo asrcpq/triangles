@@ -1,4 +1,4 @@
-introduce future again
+modelman dirty flag
 
 todo:
 - multiview

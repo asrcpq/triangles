@@ -14,6 +14,7 @@ type VertexTexBuffer = Arc<CpuAccessibleBuffer<[VertexTex; BUFSIZE]>>;
 
 pub struct Modelman {
 	pub buffer: VertexTexBuffer,
+	cached_size: Option<usize>, // none = dirty
 	models: Vec<ModelRef>,
 }
 
@@ -32,6 +33,7 @@ impl Modelman {
 		};
 		Self {
 			buffer,
+			cached_size: None,
 			models: Default::default(),
 		}
 	}
@@ -74,6 +76,7 @@ impl Modelman {
 		};
 		let model = ModelRef::new(model);
 		self.models.push(model.clone());
+		self.cached_size = None;
 		model
 	}
 
@@ -87,18 +90,24 @@ impl Modelman {
 				}
 			}
 		}
+		self.cached_size = None;
 	}
 
 	pub fn gc(&mut self) {
 		for model in std::mem::take(&mut self.models).into_iter() {
 			if !model.dropped() {
 				self.models.push(model);
+			} else {
+				self.cached_size = None;
 			}
 		}
 	}
 
 	pub fn write_buffer(&mut self) -> Option<usize> {
 		self.gc();
+		if self.cached_size.is_some() {
+			return self.cached_size
+		}
 		let mut buffers: Vec<Ref<CompiledModel>> =
 			self.models.iter().map(|x| x.borrow()).filter(|x| x.visible).collect();
 		buffers.sort_by_key(|x| x.z);
@@ -117,6 +126,7 @@ impl Modelman {
 		{
 			*v = *w;
 		}
+		self.cached_size = Some(len);
 		Some(len)
 	}
 }

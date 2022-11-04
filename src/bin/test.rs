@@ -40,12 +40,13 @@ fn main() {
 	let _triangle_model = rdr.insert_model(&model);
 
 	let mut camcon = Camcon::new(ssize);
+	let mut dirty = false;
 
 	// event loop
 	el.run(move |event, _, ctrl| match event {
 		Event::WindowEvent { event: e, .. } => {
 			if camcon.process_event(&e) {
-				rdr.redraw();
+				dirty = true;
 			}
 			match e {
 				WindowEvent::CloseRequested => {
@@ -58,7 +59,7 @@ fn main() {
 				}
 				WindowEvent::KeyboardInput { input, .. } => {
 					if input.state == ElementState::Pressed {
-						rdr.redraw();
+						dirty = true;
 					}
 				}
 				_ => {}
@@ -68,6 +69,10 @@ fn main() {
 			rdr.render(camcon.get_camera());
 		}
 		Event::MainEventsCleared => {
+			if dirty {
+				dirty = false;
+				rdr.redraw();
+			}
 			*ctrl = ControlFlow::Wait;
 		}
 		_ => {}
