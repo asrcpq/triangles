@@ -53,7 +53,6 @@ fn create_image_view(
 }
 
 impl Texman {
-	// removed when TexHandle dropped
 	pub fn upload(
 		&mut self,
 		image: Teximg,

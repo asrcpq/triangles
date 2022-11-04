@@ -1,12 +1,14 @@
+pub mod bmtext;
+pub mod model;
+pub mod renderer;
+pub mod teximg;
+
 mod base;
 mod camera;
 mod helper;
-pub mod model;
 mod modelman;
-pub mod renderer;
 mod rmod;
 mod shader;
-pub mod teximg;
 mod texman;
 mod vertex;
 

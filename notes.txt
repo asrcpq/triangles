@@ -1,4 +1,4 @@
-clippy fmt
+split bitmap text rendering to module
 
 todo:
 - partial update(damage)

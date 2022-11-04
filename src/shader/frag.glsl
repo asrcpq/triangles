@@ -1,5 +1,5 @@
 #version 450
-#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_nonuniform_qualifier: enable
 
 layout(location = 0) in vec4 f_color;
 layout(location = 1) in vec2 f_tex_coord;
