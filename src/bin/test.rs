@@ -4,15 +4,17 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use triangles::model::cmodel::{Model, TexFace};
 use triangles::renderer::Renderer;
 use triangles::bmtext::FontConfig;
+use triangles::camcon::Camcon;
 
 fn main() {
 	// initialize
 	let el = EventLoop::new();
 	let mut rdr = Renderer::new(&el);
+	let ssize = rdr.get_size();
 
 	// draw text
 	let mut fc = FontConfig::default();
-	fc.resize_screen(rdr.get_size());
+	fc.resize_screen(ssize);
 	let img = fc.bitw_loader("../bitw/data/lat15_terminus32x16.txt");
 	rdr.upload_tex(img, 0);
 	let mut model = fc.generate_model();
@@ -37,26 +39,32 @@ fn main() {
 	};
 	let _triangle_model = rdr.insert_model(&model);
 
+	let mut camcon = Camcon::new(ssize);
+
 	// event loop
 	el.run(move |event, _, ctrl| match event {
-		Event::WindowEvent { event: e, .. } => match e {
-			WindowEvent::CloseRequested => {
-				*ctrl = ControlFlow::Exit;
+		Event::WindowEvent { event: e, .. } => {
+			if camcon.process_event(&e) {
+				rdr.redraw();
 			}
-			WindowEvent::Resized(_) => {
-				rdr.damage();
-			}
-			WindowEvent::KeyboardInput { input, .. } => {
-				if input.state == ElementState::Pressed {
-					// rdr.insert_model(0, &model);
-					rdr.redraw();
+			match e {
+				WindowEvent::CloseRequested => {
+					*ctrl = ControlFlow::Exit;
 				}
+				WindowEvent::Resized(_) => {
+					rdr.damage();
+				}
+				WindowEvent::KeyboardInput { input, .. } => {
+					if input.state == ElementState::Pressed {
+						// rdr.insert_model(0, &model);
+						rdr.redraw();
+					}
+				}
+				_ => {}
 			}
-			_ => {}
 		},
 		Event::RedrawRequested(_window_id) => {
-			eprintln!("redraw");
-			rdr.render2();
+			rdr.render(camcon.get_camera());
 		}
 		Event::MainEventsCleared => {
 			*ctrl = ControlFlow::Wait;
