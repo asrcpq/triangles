@@ -111,7 +111,7 @@ impl FontConfig {
 		Model {vs, uvs, faces: Default::default()}
 	}
 
-	fn get_terminal_size_in_char(&self) -> [u32; 2] {
+	pub fn get_terminal_size_in_char(&self) -> [u32; 2] {
 		[
 			self.screen_size[0] / self.font_size[0],
 			self.screen_size[1] / self.font_size[1],
