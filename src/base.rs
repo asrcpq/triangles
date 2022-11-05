@@ -104,7 +104,6 @@ pub fn get_device_and_queue(
 	let features = Features {
 		descriptor_binding_variable_descriptor_count: true,
 		descriptor_indexing: true,
-		shader_uniform_buffer_array_non_uniform_indexing: true,
 		runtime_descriptor_array: true,
 		..Features::empty()
 	};
