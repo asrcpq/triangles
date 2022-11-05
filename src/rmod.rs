@@ -44,7 +44,7 @@ impl Rmod {
 		let device = base.device.clone();
 		let renderpass_tex =
 			get_render_pass_clear(device.clone(), base.swapchain.clone());
-		let pipeline_tex = get_pipeline_tex(renderpass_tex.clone(), device, 0);
+		let pipeline_tex = get_pipeline_tex(renderpass_tex.clone(), device, 1);
 		let framebuffers_tex = window_size_dependent_setup(
 			renderpass_tex.clone(),
 			&base.images,

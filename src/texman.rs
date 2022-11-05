@@ -8,7 +8,6 @@ use vulkano::sampler::{Sampler, SamplerCreateInfo};
 use crate::helper::*;
 use crate::teximg::Teximg;
 
-#[derive(Default)]
 pub struct Texman {
 	// we don't use outer id allocator
 	// to allow creating model in advance of uploading that texture
@@ -23,6 +22,18 @@ pub struct Texman {
 
 	image_views: Vec<VkwImageView>,
 	dirty: bool,
+}
+
+impl Default for Texman {
+	fn default() -> Self {
+		Self {
+			mapper: Default::default(),
+			remove_list: Vec::new(),
+			id_alloc: 0,
+			image_views: Vec::new(),
+			dirty: true,
+		}
+	}
 }
 
 // TODO: mutable image

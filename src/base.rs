@@ -9,7 +9,7 @@ use vulkano::image::ImageUsage;
 use vulkano::instance::{Instance, InstanceCreateInfo, InstanceExtensions};
 use vulkano::memory::allocator::StandardMemoryAllocator;
 use vulkano::swapchain::{PresentMode, Swapchain, SwapchainCreateInfo};
-use vulkano::VulkanLibrary;
+use vulkano::{Version, VulkanLibrary};
 use vulkano_win::VkSurfaceBuild;
 use winit::dpi::{LogicalSize, Size};
 use winit::event_loop::EventLoopWindowTarget;
@@ -37,6 +37,7 @@ fn winit_size(size: [u32; 2]) -> Size {
 impl Base {
 	pub fn new<E>(el: &EventLoopWindowTarget<E>) -> Self {
 		let library = VulkanLibrary::new().unwrap();
+		assert!(library.api_version() >= Version::V1_2);
 		let required_extensions = vulkano_win::required_extensions(&library);
 		let extensions = InstanceExtensions {
 			ext_debug_utils: true,
@@ -103,7 +104,6 @@ pub fn get_device_and_queue(
 
 	let features = Features {
 		descriptor_binding_variable_descriptor_count: true,
-		descriptor_indexing: true,
 		runtime_descriptor_array: true,
 		..Features::empty()
 	};
