@@ -85,7 +85,8 @@ impl Renderer {
 
 	pub fn with_debugger(mut self) -> Self {
 		unsafe {
-			self._debug_callback = Some(get_debug_callback(self.base.instance.clone()));
+			self._debug_callback =
+				Some(get_debug_callback(self.base.instance.clone()));
 		}
 		self
 	}
@@ -111,13 +112,8 @@ impl Renderer {
 		self.dirty = true;
 	}
 
-	pub fn insert_model(
-		&mut self,
-		model: &Model,
-	) -> ModelRef {
-		self.rmod
-			.modelman
-			.insert(model, &self.rmod.texman.mapper)
+	pub fn insert_model(&mut self, model: &Model) -> ModelRef {
+		self.rmod.modelman.insert(model, &self.rmod.texman.mapper)
 	}
 
 	pub fn render2(&mut self) {

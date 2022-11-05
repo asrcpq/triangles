@@ -1,13 +1,13 @@
+use std::cell::Ref;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::cell::Ref;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
 
+use super::cmodel::Model;
+use super::compiled_model::CompiledModel;
+use super::model_ref::ModelRef;
 use crate::helper::*;
 use crate::vertex::VertexTex;
-use super::compiled_model::CompiledModel;
-use super::cmodel::Model;
-use super::model_ref::ModelRef;
 
 const BUFSIZE: usize = 1 << 24;
 type VertexTexBuffer = Arc<CpuAccessibleBuffer<[VertexTex; BUFSIZE]>>;
@@ -104,10 +104,14 @@ impl Modelman {
 	pub fn write_buffer(&mut self) -> Option<usize> {
 		self.gc();
 		if self.cached_size.is_some() {
-			return self.cached_size
+			return self.cached_size;
 		}
-		let mut buffers: Vec<Ref<CompiledModel>> =
-			self.models.iter().map(|x| x.borrow()).filter(|x| x.visible).collect();
+		let mut buffers: Vec<Ref<CompiledModel>> = self
+			.models
+			.iter()
+			.map(|x| x.borrow())
+			.filter(|x| x.visible)
+			.collect();
 		buffers.sort_by_key(|x| x.z);
 		let len = buffers.iter().map(|x| x.vertices.len()).sum();
 

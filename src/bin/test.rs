@@ -1,10 +1,10 @@
 use winit::event::{ElementState, Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 
-use triangles::model::cmodel::{Model, Face};
-use triangles::renderer::Renderer;
 use triangles::bmtext::FontConfig;
 use triangles::camcon::Camcon;
+use triangles::model::cmodel::{Face, Model};
+use triangles::renderer::Renderer;
 
 fn main() {
 	// initialize
@@ -19,8 +19,18 @@ fn main() {
 	rdr.upload_tex(img, 0);
 	let mut model = fc.generate_model();
 	model.faces = Vec::new();
-	model.faces.extend(fc.text2fs([0, 0], "hello".chars(), [1.0, 1.0, 1.0, 1.0], 0));
-	model.faces.extend(fc.text2fs([0, 1], "world".chars(), [0.0, 1.0, 1.0, 1.0], 0));
+	model.faces.extend(fc.text2fs(
+		[0, 0],
+		"hello".chars(),
+		[1.0, 1.0, 1.0, 1.0],
+		0,
+	));
+	model.faces.extend(fc.text2fs(
+		[0, 1],
+		"world".chars(),
+		[0.0, 1.0, 1.0, 1.0],
+		0,
+	));
 	let mut text_model = rdr.insert_model(&model);
 	text_model.set_z(1);
 

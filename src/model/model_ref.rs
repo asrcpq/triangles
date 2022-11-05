@@ -1,5 +1,5 @@
+use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
-use std::cell::{RefCell, Ref, RefMut};
 
 use super::compiled_model::CompiledModel;
 

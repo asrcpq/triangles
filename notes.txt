@@ -1,4 +1,1 @@
-multicolor text
-
-todo:
-- multiview
+clean

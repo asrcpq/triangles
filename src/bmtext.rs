@@ -1,4 +1,4 @@
-use crate::model::cmodel::{Model, Face};
+use crate::model::cmodel::{Face, Model};
 use crate::teximg::Teximg;
 
 #[derive(Default)]
@@ -49,11 +49,8 @@ impl FontConfig {
 				let pos_y = (chpos_y * row) as usize;
 				for x in 0..col as usize {
 					for y in 0..row as usize {
-						data[pos_y + y][pos_x + x] = if tmp_data[y][x] {
-							[255; 4]
-						} else {
-							[0; 4]
-						};
+						data[pos_y + y][pos_x + x] =
+							if tmp_data[y][x] { [255; 4] } else { [0; 4] };
 					}
 				}
 
@@ -99,7 +96,10 @@ impl FontConfig {
 		let mut uvs = Vec::new();
 		for y in 0..=yy {
 			for x in 0..=xx {
-				uvs.push([(x * col) as f32 / tx as f32, (y * row) as f32 / ty as f32])
+				uvs.push([
+					(x * col) as f32 / tx as f32,
+					(y * row) as f32 / ty as f32,
+				])
 			}
 		}
 		uvs
@@ -108,7 +108,11 @@ impl FontConfig {
 	pub fn generate_model(&self) -> Model {
 		let vs = self.generate_vs();
 		let uvs = self.generate_uvs();
-		Model {vs, uvs, faces: Default::default()}
+		Model {
+			vs,
+			uvs,
+			faces: Default::default(),
+		}
 	}
 
 	pub fn get_terminal_size_in_char(&self) -> [u32; 2] {
@@ -145,16 +149,16 @@ impl FontConfig {
 			let pos_y = idx / x1;
 			if pos_x >= x1 || pos_y >= y1 {
 				// eprintln!("text overflow");
-				continue
+				continue;
 			}
 			let screen_leftup = (pos_y * (x1 + 1) + pos_x) as usize;
 			let screen_leftdown = ((pos_y + 1) * (x1 + 1) + pos_x) as usize;
-	
+
 			let pos_x = ch % x2;
 			let pos_y = ch / x2;
 			let texture_leftup = (pos_y * (x2 + 1) + pos_x) as usize;
 			let texture_leftdown = ((pos_y + 1) * (x2 + 1) + pos_x) as usize;
-	
+
 			let face1 = Face {
 				vid: [screen_leftup, screen_leftup + 1, screen_leftdown],
 				color,
@@ -165,7 +169,11 @@ impl FontConfig {
 				vid: [screen_leftup + 1, screen_leftdown, screen_leftdown + 1],
 				color,
 				layer,
-				uvid: [texture_leftup + 1, texture_leftdown, texture_leftdown + 1],
+				uvid: [
+					texture_leftup + 1,
+					texture_leftdown,
+					texture_leftdown + 1,
+				],
 			};
 			result.push(face1);
 			result.push(face2);
