@@ -29,7 +29,7 @@ pub struct Renderer {
 	viewport: Viewport,
 	dirty: bool,
 	future: Option<VkwFuture>,
-	_debug_callback: DebugUtilsMessenger,
+	_debug_callback: Option<DebugUtilsMessenger>,
 }
 
 // texman
@@ -64,8 +64,6 @@ impl Renderer {
 impl Renderer {
 	pub fn new<E>(el: &EventLoopWindowTarget<E>) -> Self {
 		let base = Base::new(el);
-		let _debug_callback =
-			unsafe { get_debug_callback(base.instance.clone()) };
 		let rmod = Rmod::new(base.clone());
 		let viewport = Viewport {
 			origin: [0.0, 0.0],
@@ -79,10 +77,17 @@ impl Renderer {
 			viewport,
 			dirty: false,
 			future: None,
-			_debug_callback,
+			_debug_callback: None,
 		};
 		result.upload_tex(Teximg::filled([1, 1], [0; 4]), -2);
 		result
+	}
+
+	pub fn with_debugger(mut self) -> Self {
+		unsafe {
+			self._debug_callback = Some(get_debug_callback(self.base.instance.clone()));
+		}
+		self
 	}
 
 	fn get_window(&self) -> &Window {

@@ -1,4 +1,4 @@
-allow empty model and empty vertices(exit draw)
+optional debugging layer
 
 todo:
 - font cursor renderer
