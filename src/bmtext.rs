@@ -128,7 +128,7 @@ impl FontConfig {
 	pub fn text2fs(
 		&self,
 		offset: [u32; 2],
-		text: &str,
+		text: impl Iterator<Item = char>,
 		color: [f32; 4],
 		layer: i32,
 	) -> Vec<Face> {
@@ -137,7 +137,7 @@ impl FontConfig {
 		let offset = offset[0] + offset[1] * x1;
 		let [x2, _] = self.get_texture_size_in_char();
 		let mut result = Vec::new();
-		for (idx, ch) in text.bytes().enumerate() {
+		for (idx, ch) in text.enumerate() {
 			let idx = idx as u32 + offset;
 			let ch = ch as u32;
 			// 10 chars has 11 vertices

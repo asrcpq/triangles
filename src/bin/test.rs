@@ -19,8 +19,8 @@ fn main() {
 	rdr.upload_tex(img, 0);
 	let mut model = fc.generate_model();
 	model.faces = Vec::new();
-	model.faces.extend(fc.text2fs([0, 0], "hello", [1.0, 1.0, 1.0, 1.0], 0));
-	model.faces.extend(fc.text2fs([0, 1], "world", [0.0, 1.0, 1.0, 1.0], 0));
+	model.faces.extend(fc.text2fs([0, 0], "hello".chars(), [1.0, 1.0, 1.0, 1.0], 0));
+	model.faces.extend(fc.text2fs([0, 1], "world".chars(), [0.0, 1.0, 1.0, 1.0], 0));
 	let mut text_model = rdr.insert_model(&model);
 	text_model.set_z(1);
 

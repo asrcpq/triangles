@@ -1,5 +1,4 @@
 multicolor text
 
 todo:
-- font cursor renderer
 - multiview
