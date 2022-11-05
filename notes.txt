@@ -1,4 +1,4 @@
-optional debugging layer
+multicolor text
 
 todo:
 - font cursor renderer

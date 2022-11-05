@@ -18,7 +18,9 @@ fn main() {
 	let img = fc.bitw_loader("../bitw/data/lat15_terminus32x16.txt");
 	rdr.upload_tex(img, 0);
 	let mut model = fc.generate_model();
-	model.faces = fc.text2fs("hello,world", 0);
+	model.faces = Vec::new();
+	model.faces.extend(fc.text2fs([0, 0], "hello", [1.0, 1.0, 1.0, 1.0], 0));
+	model.faces.extend(fc.text2fs([0, 1], "world", [0.0, 1.0, 1.0, 1.0], 0));
 	let mut text_model = rdr.insert_model(&model);
 	text_model.set_z(1);
 
@@ -32,7 +34,7 @@ fn main() {
 		uvs: vec![[0.0; 2]],
 		faces: vec![Face {
 			vid: [0, 1, 2],
-			color: [0.0, 0.0, 1.0, 1.0],
+			color: [0.5, 0.0, 0.0, 1.0],
 			layer: -1, // no texture
 			uvid: [0; 3],
 		}],

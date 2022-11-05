@@ -125,13 +125,20 @@ impl FontConfig {
 		]
 	}
 
-	pub fn text2fs(&self, text: &str, layer: i32) -> Vec<Face> {
+	pub fn text2fs(
+		&self,
+		offset: [u32; 2],
+		text: &str,
+		color: [f32; 4],
+		layer: i32,
+	) -> Vec<Face> {
 		// x1 terminal size(in char), x2 texture size(in char)
 		let [x1, y1] = self.get_terminal_size_in_char();
+		let offset = offset[0] + offset[1] * x1;
 		let [x2, _] = self.get_texture_size_in_char();
 		let mut result = Vec::new();
 		for (idx, ch) in text.bytes().enumerate() {
-			let idx = idx as u32;
+			let idx = idx as u32 + offset;
 			let ch = ch as u32;
 			// 10 chars has 11 vertices
 			let pos_x = idx % x1;
@@ -150,13 +157,13 @@ impl FontConfig {
 	
 			let face1 = Face {
 				vid: [screen_leftup, screen_leftup + 1, screen_leftdown],
-				color: [0.0; 4],
+				color,
 				layer,
 				uvid: [texture_leftup, texture_leftup + 1, texture_leftdown],
 			};
 			let face2 = Face {
 				vid: [screen_leftup + 1, screen_leftdown, screen_leftdown + 1],
-				color: [0.0; 4],
+				color,
 				layer,
 				uvid: [texture_leftup + 1, texture_leftdown, texture_leftdown + 1],
 			};
