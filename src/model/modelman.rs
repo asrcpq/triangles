@@ -67,7 +67,6 @@ impl Modelman {
 				})
 			})
 			.collect::<Vec<_>>();
-		assert!(!vertices.is_empty()); // TODO: allow empty model
 		let model = CompiledModel {
 			visible: true,
 			z: 0,

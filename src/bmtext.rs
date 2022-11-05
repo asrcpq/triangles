@@ -11,7 +11,7 @@ pub struct FontConfig {
 impl FontConfig {
 	pub fn resize_screen(&mut self, new_size: [u32; 2]) {
 		self.screen_size = new_size;
-		eprintln!("FontConfig resized: {:?}", new_size);
+		// eprintln!("FontConfig resized: {:?}", new_size);
 	}
 
 	pub fn get_font_size(&self) -> [u32; 2] {

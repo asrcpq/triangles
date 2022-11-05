@@ -1,4 +1,4 @@
-prevent crash when text overflows
+allow empty model and empty vertices(exit draw)
 
 todo:
 - font cursor renderer

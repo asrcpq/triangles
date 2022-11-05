@@ -71,6 +71,7 @@ impl Rmod {
 	) {
 		if self.texman.get_dirty() {
 			let (tex_len, update_mapper) = self.texman.tex_len();
+			if tex_len == 0 { return }
 			self.modelman.map_tex(update_mapper);
 			self.pipeline_tex = get_pipeline_tex(
 				self.renderpass_tex.clone(),
