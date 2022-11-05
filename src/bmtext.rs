@@ -127,22 +127,26 @@ impl FontConfig {
 
 	pub fn text2fs(&self, text: &str, layer: i32) -> Vec<Face> {
 		// x1 terminal size(in char), x2 texture size(in char)
-		let [x1, _] = self.get_terminal_size_in_char();
+		let [x1, y1] = self.get_terminal_size_in_char();
 		let [x2, _] = self.get_texture_size_in_char();
-		let x1 = x1 as usize;
-		let x2 = x2 as usize;
 		let mut result = Vec::new();
 		for (idx, ch) in text.bytes().enumerate() {
+			let idx = idx as u32;
+			let ch = ch as u32;
 			// 10 chars has 11 vertices
 			let pos_x = idx % x1;
 			let pos_y = idx / x1;
-			let screen_leftup = pos_y * (x1 + 1) + pos_x;
-			let screen_leftdown = (pos_y + 1) * (x1 + 1) + pos_x;
+			if pos_x >= x1 || pos_y >= y1 {
+				// eprintln!("text overflow");
+				continue
+			}
+			let screen_leftup = (pos_y * (x1 + 1) + pos_x) as usize;
+			let screen_leftdown = ((pos_y + 1) * (x1 + 1) + pos_x) as usize;
 	
-			let pos_x = (ch as usize) % x2;
-			let pos_y = (ch as usize) / x2;
-			let texture_leftup = pos_y * (x2 + 1) + pos_x;
-			let texture_leftdown = (pos_y + 1) * (x2 + 1) + pos_x;
+			let pos_x = ch % x2;
+			let pos_y = ch / x2;
+			let texture_leftup = (pos_y * (x2 + 1) + pos_x) as usize;
+			let texture_leftdown = ((pos_y + 1) * (x2 + 1) + pos_x) as usize;
 	
 			let face1 = Face {
 				vid: [screen_leftup, screen_leftup + 1, screen_leftdown],

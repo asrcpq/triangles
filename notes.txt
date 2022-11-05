@@ -1,4 +1,4 @@
-solve latency
+prevent crash when text overflows
 
 todo:
 - font cursor renderer
