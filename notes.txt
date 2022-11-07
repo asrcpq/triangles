@@ -1,1 +1,1 @@
-fix descriptor count initialize problem
+prefer integrated gpu
