@@ -8,6 +8,7 @@ pub fn wide_test(ch: char) -> bool {
 }
 
 pub struct FontConfig {
+	scaler: i32,
 	font_size: [u32; 2],
 	screen_size: [u32; 2],
 	texture_size: [u32; 2],
@@ -20,15 +21,29 @@ impl FontConfig {
 		font_size: [u32; 2],
 	) -> Self {
 		Self {
+			scaler: 1,
 			font_size,
 			texture_size,
 			screen_size,
 		}
 	}
 
+	pub fn with_scaler(mut self, scaler: i32) -> Self {
+		self.scaler = scaler;
+		self
+	}
+
 	pub fn resize_screen(&mut self, new_size: [u32; 2]) {
 		self.screen_size = new_size;
 		// eprintln!("FontConfig resized: {:?}", new_size);
+	}
+
+	// half wide
+	pub fn get_scaled_font_size(&self) -> [u32; 2] {
+		[
+			self.font_size[0] * self.scaler as u32 / 2,
+			self.font_size[1] * self.scaler as u32,
+		]
 	}
 
 	pub fn get_font_size(&self) -> [u32; 2] {
@@ -37,8 +52,7 @@ impl FontConfig {
 
 	fn generate_vs(&self) -> Vec<[f32; 4]> {
 		let [xx, yy] = self.get_terminal_size_in_char();
-		let [mut col, row] = self.font_size;
-		col /= 2; // half wide
+		let [mut col, row] = self.get_scaled_font_size();
 		let mut vs = Vec::new();
 		for y in 0..=yy {
 			for x in 0..=xx {
@@ -78,8 +92,8 @@ impl FontConfig {
 
 	pub fn get_terminal_size_in_char(&self) -> [u32; 2] {
 		[
-			self.screen_size[0] / (self.font_size[0] / 2),
-			self.screen_size[1] / self.font_size[1],
+			self.screen_size[0] / (self.font_size[0] / 2 * self.scaler as u32),
+			self.screen_size[1] / (self.font_size[1] * self.scaler as u32),
 		]
 	}
 

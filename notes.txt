@@ -1,4 +1,4 @@
-full/half width char
+fix bug in scaling
 
 todo:
 grayscale sampler
