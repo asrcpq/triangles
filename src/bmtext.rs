@@ -1,5 +1,12 @@
 use crate::model::cmodel::{Face, Model};
 
+pub fn wide_test(ch: char) -> bool {
+	match unicode_width::UnicodeWidthChar::width(ch) {
+		Some(x) => x >= 2,
+		None => true,
+	}
+}
+
 pub struct FontConfig {
 	font_size: [u32; 2],
 	screen_size: [u32; 2],
@@ -96,10 +103,7 @@ impl FontConfig {
 		let [x2, _] = self.get_texture_size_in_char();
 		let mut result = Vec::new();
 		for ch in text {
-			let wide = match unicode_width::UnicodeWidthChar::width(ch) {
-				Some(x) => x >= 2,
-				None => true,
-			};
+			let wide = wide_test(ch);
 			let ch = ch as u32;
 			// 10 chars has 11 vertices
 			let pos_x = idx % x1;

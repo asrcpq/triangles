@@ -14,7 +14,7 @@ fn main() {
 	let ssize = rdr.get_size();
 
 	// draw text
-	let img = Teximg::load("../bitw/data/unifont1.png");
+	let img = Teximg::load("../fontdata/v1/unifont1.png");
 	let fc = FontConfig::new(ssize, img.dim, [16, 16]);
 	rdr.upload_tex(img, 0);
 	let mut model = fc.generate_model();
