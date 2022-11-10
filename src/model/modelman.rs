@@ -47,6 +47,7 @@ impl Modelman {
 			.faces
 			.iter()
 			.flat_map(|face| {
+				// TODO: handle invalid model
 				(0..3).map(|i| {
 					let tex_coord = if face.layer < 0 {
 						[0.0; 2]
