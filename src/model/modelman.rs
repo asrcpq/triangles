@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
 
-use super::cmodel::Model;
+use super::cmodel::{Face, Model};
 use super::compiled_model::CompiledModel;
 use super::model_ref::ModelRef;
 use crate::helper::*;
@@ -16,6 +16,45 @@ pub struct Modelman {
 	pub buffer: VertexTexBuffer,
 	cached_size: Option<usize>, // none = dirty
 	models: Vec<ModelRef>,
+}
+
+fn build_face(
+	model: &Model,
+	face: &Face,
+	mapper: &HashMap<i32, i32>,
+) -> Option<[VertexTex; 3]> {
+	let mut vs: [VertexTex; 3] = unsafe {
+		std::mem::MaybeUninit::zeroed().assume_init()
+	};
+	for idx in 0..3 {
+		let tex_coord = if face.layer < 0 {
+			[0.0; 2]
+		} else {
+			match model.uvs.get(face.uvid[idx]) {
+				Some(x) => *x,
+				None => return None,
+			}
+		};
+		let tex_layer = if face.layer < 0 {
+			face.layer
+		} else {
+			match mapper.get(&face.layer) {
+				Some(x) => *x,
+				None => return None,
+			}
+		};
+		let pos = match model.vs.get(face.vid[idx]) {
+			Some(x) => *x,
+			None => return None,
+		};
+		vs[idx] = VertexTex {
+			pos,
+			color: face.color,
+			tex_coord,
+			tex_layer,
+		};
+	}
+	Some(vs)
 }
 
 impl Modelman {
@@ -43,31 +82,17 @@ impl Modelman {
 		model: &Model,
 		mapper: &HashMap<i32, i32>,
 	) -> ModelRef {
-		let vertices = model
-			.faces
-			.iter()
-			.flat_map(|face| {
-				// TODO: handle invalid model
-				(0..3).map(|i| {
-					let tex_coord = if face.layer < 0 {
-						[0.0; 2]
-					} else {
-						model.uvs[face.uvid[i]]
-					};
-					let tex_layer = if face.layer < 0 {
-						face.layer
-					} else {
-						*mapper.get(&face.layer).unwrap()
-					};
-					VertexTex {
-						pos: model.vs[face.vid[i]],
-						color: face.color,
-						tex_coord,
-						tex_layer,
-					}
-				})
-			})
-			.collect::<Vec<_>>();
+		let mut invalid = 0;
+		let mut vertices = Vec::new();
+		for face in model.faces.iter() {
+			match build_face(model, face, mapper) {
+				Some(vs) => vertices.extend(vs),
+				None => invalid += 1,
+			}
+		}
+		if invalid > 0 {
+			eprintln!("ERROR: Skipped {} invalid faces", invalid);
+		}
 		let model = CompiledModel {
 			visible: true,
 			z: 0,

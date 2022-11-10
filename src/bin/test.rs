@@ -5,6 +5,7 @@ use triangles::bmtext::FontConfig;
 use triangles::camcon::Camcon;
 use triangles::model::cmodel::{Face, Model};
 use triangles::renderer::Renderer;
+use triangles::teximg::Teximg;
 
 fn main() {
 	// initialize
@@ -13,21 +14,20 @@ fn main() {
 	let ssize = rdr.get_size();
 
 	// draw text
-	let mut fc = FontConfig::default();
-	fc.resize_screen(ssize);
-	let img = fc.bitw_loader("../bitw/data/lat15_terminus32x16.txt");
+	let img = Teximg::load("../bitw/data/unifont1.png");
+	let fc = FontConfig::new(ssize, img.dim, [16, 16]);
 	rdr.upload_tex(img, 0);
 	let mut model = fc.generate_model();
 	model.faces = Vec::new();
 	model.faces.extend(fc.text2fs(
 		[0, 0],
-		"hello".chars(),
+		"hello,锟斤拷".chars(),
 		[1.0, 1.0, 1.0, 1.0],
 		0,
 	));
 	model.faces.extend(fc.text2fs(
 		[0, 1],
-		"world".chars(),
+		"world烫烫烫".chars(),
 		[0.0, 1.0, 1.0, 1.0],
 		0,
 	));

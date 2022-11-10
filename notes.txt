@@ -1,1 +1,4 @@
-prefer integrated gpu
+full/half width char
+
+todo:
+grayscale sampler
