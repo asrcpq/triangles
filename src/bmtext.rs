@@ -52,7 +52,7 @@ impl FontConfig {
 
 	fn generate_vs(&self) -> Vec<[f32; 4]> {
 		let [xx, yy] = self.get_terminal_size_in_char();
-		let [mut col, row] = self.get_scaled_font_size();
+		let [col, row] = self.get_scaled_font_size();
 		let mut vs = Vec::new();
 		for y in 0..=yy {
 			for x in 0..=xx {
@@ -128,8 +128,9 @@ impl FontConfig {
 				idx += 1;
 			}
 
-			if pos_x >= x1 || pos_y >= y1 {
-				// eprintln!("text overflow");
+			if pos_x >= x1 || pos_y >= y1 || pos_x == x1 - 1 && wide {
+				// TODO: print less error
+				eprintln!("text overflow");
 				continue;
 			}
 			let screen_leftup = (pos_y * (x1 + 1) + pos_x) as usize;
